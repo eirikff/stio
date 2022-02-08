@@ -43,11 +43,3 @@ repositories:
     type: git
     url: git@github.com:ethz-asl/ceres_catkin.git
     version: master
-  dbow2_catkin:
-    type: git
-    url: git@github.com:uzh-rpg/dbow2_catkin.git
-    version: master
-  rpg_trajectory_evaluation:
-    type: git
-    url: git@github.com:uzh-rpg/rpg_trajectory_evaluation.git
-    version: dev

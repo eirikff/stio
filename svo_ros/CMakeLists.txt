@@ -50,8 +50,8 @@ endif()
 cs_add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${svo_backend_LIBRARIES} ${GTSAM_LIBRARIES})
 
-cs_add_executable(svo_benchmark src/benchmark_node.cpp)
-target_link_libraries(svo_benchmark ${PROJECT_NAME})
+# cs_add_executable(svo_benchmark src/benchmark_node.cpp)
+# target_link_libraries(svo_benchmark ${PROJECT_NAME})
 
 cs_add_executable(svo_node src/svo_node.cpp)
 target_link_libraries(svo_node ${PROJECT_NAME})
