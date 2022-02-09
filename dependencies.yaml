@@ -43,3 +43,11 @@ repositories:
     type: git
     url: git@github.com:ethz-asl/ceres_catkin.git
     version: master
+  catkin_boost_python_buildtool:
+    type: git
+    url: git@github.com:ethz-asl/catkin_boost_python_buildtool.git
+    version: master
+  numpy_eigen:
+    type: git
+    url: git@github.com:ethz-asl/numpy_eigen.git
+    version: master
