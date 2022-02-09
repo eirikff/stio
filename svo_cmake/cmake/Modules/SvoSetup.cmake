@@ -3,7 +3,7 @@ SET(CMAKE_BUILD_TYPE Release) # Release, RelWithDebInfo
 SET(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # user build settings
-SET(USE_LOOP_CLOSING TRUE)
+SET(USE_LOOP_CLOSING FALSE)
 SET(USE_GLOBAL_MAP FALSE)
 
 # Set definitions
