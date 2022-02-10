@@ -12,60 +12,60 @@
 #include <svo/common/transformation.h>
 #include <vikit/solver/mini_least_squares_solver.h>
 
-namespace svo {
-
-class Frame;
-
-/// Depth estimation by minimizing photometric error.
-class DepthEstimator : public vk::solver::MiniLeastSquaresSolver<1, double, DepthEstimator>
+namespace svo
 {
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  using SolverOptions = vk::solver::MiniLeastSquaresSolverOptions;
-  using DepthEstimatorState = double;
 
-  static constexpr int kPatchHalfsize = 4;
-  static constexpr int kPatchSize = 2*kPatchHalfsize;
-  static constexpr int kPatchArea = kPatchSize*kPatchSize;
-  static constexpr int kMaxLevel = 4;
-  static constexpr int kMinLevel = 0;
+    class Frame;
 
-  DepthEstimator(const SolverOptions& solver_options);
-  ~DepthEstimator() = default;
+    /// Depth estimation by minimizing photometric error.
+    class DepthEstimator : public vk::solver::MiniLeastSquaresSolver<1, double, DepthEstimator>
+    {
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        using SolverOptions = vk::solver::MiniLeastSquaresSolverOptions;
+        using DepthEstimatorState = double;
 
-  static SolverOptions getDefaultSolverOptions();
+        static constexpr int kPatchHalfsize = 4;
+        static constexpr int kPatchSize = 2 * kPatchHalfsize;
+        static constexpr int kPatchArea = kPatchSize * kPatchSize;
+        static constexpr int kMaxLevel = 4;
+        static constexpr int kMinLevel = 0;
 
-  void run(
-      const FramePtr& cur_frame,
-      const FramePtr& ref_frame,
-      const int ref_feature_id);
+        DepthEstimator(const SolverOptions &solver_options);
+        ~DepthEstimator() = default;
 
-  double evaluateError(
-      const State& params,
-      HessianMatrix* H,
-      GradientVector* g);
+        static SolverOptions getDefaultSolverOptions();
 
-  void update(
-      const State& param_old,
-      const UpdateVector& dx,
-      State& param_new);
+        void run(
+            const FramePtr &cur_frame,
+            const FramePtr &ref_frame,
+            const int ref_feature_id);
 
-  bool solve(
-      const HessianMatrix& H,
-      const GradientVector& g,
-      UpdateVector& dx);
+        double evaluateError(
+            const State &params,
+            HessianMatrix *H,
+            GradientVector *g);
 
-  FramePtr cur_frame_;
-  FramePtr ref_frame_;
-  BearingVector f_ref_;
-  Keypoint px_ref_;
-  Transformation T_cur_ref_;
+        void update(
+            const State &param_old,
+            const UpdateVector &dx,
+            State &param_new);
 
-  uint8_t ref_patch_[kPatchSize*kPatchSize] __attribute__ ((aligned (16)));
-  uint8_t ref_patch_with_border_[(kPatchSize+2)*(kPatchSize+2)] __attribute__ ((aligned (16)));
+        bool solve(
+            const HessianMatrix &H,
+            const GradientVector &g,
+            UpdateVector &dx);
 
-  int level_ = 0;
+        FramePtr cur_frame_;
+        FramePtr ref_frame_;
+        BearingVector f_ref_;
+        Keypoint px_ref_;
+        Transformation T_cur_ref_;
 
-};
+        uint8_t ref_patch_[kPatchSize * kPatchSize] __attribute__((aligned(16)));
+        uint8_t ref_patch_with_border_[(kPatchSize + 2) * (kPatchSize + 2)] __attribute__((aligned(16)));
+
+        int level_ = 0;
+    };
 
 } // namespace svo

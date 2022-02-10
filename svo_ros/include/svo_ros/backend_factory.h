@@ -3,14 +3,16 @@
 #include <memory>
 #include <ros/ros.h>
 
-namespace svo {
+namespace svo
+{
 
-// forward declarations
-class BackendInterface;
+    // forward declarations
+    class BackendInterface;
 
-namespace backend_factory {
+    namespace backend_factory
+    {
 
-std::shared_ptr<BackendInterface> makeBackend(const ros::NodeHandle& pnh);
+        std::shared_ptr<BackendInterface> makeBackend(const ros::NodeHandle &pnh);
 
-} // namespace vin_factory
+    } // namespace vin_factory
 } // namespace svo

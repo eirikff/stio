@@ -12,8 +12,8 @@
 #include <vector>
 #include <string>
 //#include <cmath>      // sin, cos
-#include <memory>     // shared_ptr
-#include <stdexcept>  // assert, runtime_error
+#include <memory>    // shared_ptr
+#include <stdexcept> // assert, runtime_error
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -25,26 +25,24 @@
 #include <svo/common/camera.h>
 #include <svo/common/transformation.h>
 
-
 namespace svo
 {
-  //using namespace Eigen;
-  using Eigen::Vector2i;
-  using Eigen::Vector2f;
-  using Eigen::Vector2d;
-  using Eigen::Vector3d;
-  using Eigen::Matrix2f;
-  using Eigen::Matrix2d;
-  using Eigen::Matrix3d;
+  // using namespace Eigen;
   using Eigen::Matrix;
+  using Eigen::Matrix2d;
+  using Eigen::Matrix2f;
+  using Eigen::Matrix3d;
+  using Eigen::Vector2d;
+  using Eigen::Vector2f;
+  using Eigen::Vector2i;
+  using Eigen::Vector3d;
 
   typedef std::shared_ptr<vk::PerformanceMonitor> PerformanceMonitorPtr;
 
   extern PerformanceMonitorPtr g_permon;
-  #define SVO_LOG(name, value) g_permon->log(std::string(name),(value))
-  #define SVO_START_TIMER(name) g_permon->startTimer((name))
-  #define SVO_STOP_TIMER(name) g_permon->stopTimer((name))
-
+#define SVO_LOG(name, value) g_permon->log(std::string(name), (value))
+#define SVO_START_TIMER(name) g_permon->startTimer((name))
+#define SVO_STOP_TIMER(name) g_permon->stopTimer((name))
 
   // forward declaration of modules
   class Frame;
@@ -76,7 +74,8 @@ namespace svo
   class AbstractBundleAdjustment;
   typedef std::shared_ptr<AbstractBundleAdjustment> AbstractBundleAdjustmentPtr;
 
-  enum class BundleAdjustmentType {
+  enum class BundleAdjustmentType
+  {
     kNone,
     kGtsam,
     kCeres
@@ -104,4 +103,3 @@ namespace svo
   typedef std::shared_ptr<GlobalMap> GlobalMapPtr;
 
 } // namespace svo
-

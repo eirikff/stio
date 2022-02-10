@@ -2,5 +2,5 @@
 
 namespace svo
 {
-NullStream kNullOutput;
+    NullStream kNullOutput;
 }

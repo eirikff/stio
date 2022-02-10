@@ -2,15 +2,18 @@
 
 #include <cmath>
 
-namespace svo {
-namespace common {
-namespace conversions {
+namespace svo
+{
+    namespace common
+    {
+        namespace conversions
+        {
 
-constexpr double kDegToRad = M_PI / 180.;
+            constexpr double kDegToRad = M_PI / 180.;
 
-constexpr size_t kMilliSecondsToNanoSeconds = 1e6;
-constexpr double kNanoSecondsToSeconds = 1e-9;
+            constexpr size_t kMilliSecondsToNanoSeconds = 1e6;
+            constexpr double kNanoSecondsToSeconds = 1e-9;
 
-}  // namespace conversions
-}  // namespace common
-}  // namespace svo
+        } // namespace conversions
+    }     // namespace common
+} // namespace svo

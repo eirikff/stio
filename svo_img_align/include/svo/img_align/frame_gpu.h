@@ -24,50 +24,51 @@
 #include <svo/common/seed_wrapper.h>
 #include <svo/img_align/sparse_img_align_device_utils.cuh> //!< for FloatTypeGpu
 
-namespace svo {
-
-/**
- * @brief The FrameGpu class adds GPU data members to the frame base class.
- */
-class FrameGpu : public Frame
+namespace svo
 {
-public:
-  typedef std::shared_ptr<FrameGpu> Ptr;
 
-  std::vector<imp::cu::ImageGpu8uC1::Ptr> cu_img_pyramid_copy_; //!< Image Pyramid
-  // TODO: USE imp::ImagePyramid
-  //std::vector<imp::ImagePyramid8uC1::Ptr> cu_ref_pyramids_device_;
-  imp::cu::Matrix<FloatTypeGpu,3,4>::Ptr cu_T_imu_cam_;
-  imp::cu::Matrix<FloatTypeGpu,3,4>::Ptr cu_T_cam_imu_;
-  imp::cu::PinholeCamera::Ptr cu_camera_;
+    /**
+     * @brief The FrameGpu class adds GPU data members to the frame base class.
+     */
+    class FrameGpu : public Frame
+    {
+    public:
+        typedef std::shared_ptr<FrameGpu> Ptr;
 
-  /// Default Constructor
-  FrameGpu(const CameraPtr& cam,
-      const cv::Mat& img,
-      const uint64_t timestamp_ns,
-      const size_t n_pyr_levels);
+        std::vector<imp::cu::ImageGpu8uC1::Ptr> cu_img_pyramid_copy_; //!< Image Pyramid
+        // TODO: USE imp::ImagePyramid
+        // std::vector<imp::ImagePyramid8uC1::Ptr> cu_ref_pyramids_device_;
+        imp::cu::Matrix<FloatTypeGpu, 3, 4>::Ptr cu_T_imu_cam_;
+        imp::cu::Matrix<FloatTypeGpu, 3, 4>::Ptr cu_T_cam_imu_;
+        imp::cu::PinholeCamera::Ptr cu_camera_;
 
-  /// Constructor without image. Just for testing!
-  FrameGpu(
-      const int id,
-      const uint64_t timestamp_ns,
-      const CameraPtr& cam,
-      const Transformation& T_world_cam);
+        /// Default Constructor
+        FrameGpu(const CameraPtr &cam,
+                 const cv::Mat &img,
+                 const uint64_t timestamp_ns,
+                 const size_t n_pyr_levels);
 
-  /// Empty constructor. Just for testing!
-  FrameGpu() {}
+        /// Constructor without image. Just for testing!
+        FrameGpu(
+            const int id,
+            const uint64_t timestamp_ns,
+            const CameraPtr &cam,
+            const Transformation &T_world_cam);
 
-  /// Destructor
-  virtual ~FrameGpu();
+        /// Empty constructor. Just for testing!
+        FrameGpu() {}
 
-  // no copy
-  FrameGpu(const FrameGpu&) = delete;
-  FrameGpu& operator=(const FrameGpu&) = delete;
+        /// Destructor
+        virtual ~FrameGpu();
 
-  /// Initialize new frame and create image pyramid.
-  void initGpuData(imp::cu::Matrix<FloatTypeGpu,3,4>::Ptr& cu_T_imu_cam,
-                   imp::cu::Matrix<FloatTypeGpu,3,4>::Ptr& cu_T_cam_imu,
-                   imp::cu::PinholeCamera::Ptr& cu_camera);
-};
+        // no copy
+        FrameGpu(const FrameGpu &) = delete;
+        FrameGpu &operator=(const FrameGpu &) = delete;
+
+        /// Initialize new frame and create image pyramid.
+        void initGpuData(imp::cu::Matrix<FloatTypeGpu, 3, 4>::Ptr &cu_T_imu_cam,
+                         imp::cu::Matrix<FloatTypeGpu, 3, 4>::Ptr &cu_T_cam_imu,
+                         imp::cu::PinholeCamera::Ptr &cu_camera);
+    };
 
 } // namespace svo

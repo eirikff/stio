@@ -4,16 +4,17 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#define VIKIT_UNITTEST_ENTRYPOINT\
-  int main(int argc, char** argv) {\
-  ::testing::InitGoogleTest(&argc, argv);\
-  google::InitGoogleLogging(argv[0]);\
-  google::InstallFailureSignalHandler();\
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";\
-  FLAGS_alsologtostderr = true; \
-  FLAGS_colorlogtostderr = true; \
-  return RUN_ALL_TESTS();\
-}
+#define VIKIT_UNITTEST_ENTRYPOINT                           \
+  int main(int argc, char **argv)                           \
+  {                                                         \
+    ::testing::InitGoogleTest(&argc, argv);                 \
+    google::InitGoogleLogging(argv[0]);                     \
+    google::InstallFailureSignalHandler();                  \
+    ::testing::FLAGS_gtest_death_test_style = "threadsafe"; \
+    FLAGS_alsologtostderr = true;                           \
+    FLAGS_colorlogtostderr = true;                          \
+    return RUN_ALL_TESTS();                                 \
+  }
 
 // Let the Eclipse parser see the macro.
 #ifndef TEST
@@ -41,7 +42,7 @@
 #endif
 
 #ifndef REGISTER_TYPED_TEST_CASE_P
-#define REGISTER_TYPED_TEST_CASE_P(a, ...)  int Test_##a()
+#define REGISTER_TYPED_TEST_CASE_P(a, ...) int Test_##a()
 #endif
 
 #ifndef INSTANTIATE_TYPED_TEST_CASE_P

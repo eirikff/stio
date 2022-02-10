@@ -22,50 +22,50 @@
 
 namespace svo
 {
-class Pgo
-{
-public:
-  Pgo()
+  class Pgo
   {
-    options_.max_num_iterations = 200;
-    options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
-    has_updated_result_ = false;
-    poses_ = new ceres::MapOfPoses;
+  public:
+    Pgo()
+    {
+      options_.max_num_iterations = 200;
+      options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+      has_updated_result_ = false;
+      poses_ = new ceres::MapOfPoses;
+    };
+    ~Pgo(){};
+
+    void addPoseToPgoProblem(const Transformation t, const int frame_id);
+    void addSequentialConstraintToPgoProblem(const Transformation t_be,
+                                             const int frame_id_b,
+                                             const int frame_id_e);
+    void addLoopConstraintToPgoProblem(const Transformation t_be,
+                                       const int frame_id_b,
+                                       const int frame_id_e);
+    void updateKeyframeDatabase();
+    void purgeProblem();
+    /* The functions below are only used for testing */
+    void addConstraint(const Transformation &t_be, const int &frame_id_b,
+                       const int &frame_id_e, Eigen::Matrix<double, 6, 6> &info);
+    void solve();
+    bool searchKfIdInQueue(int id);
+    bool traceTimingData(std::string path);
+    ceres::MapOfPoses *poses_;
+    bool has_updated_result_;
+    std::vector<ceres::ResidualBlockId> seq_constraint_ids_;
+    std::deque<int> ignore_seq_constraint_kfs_;
+
+    /* Vectors to record timings */
+    std::vector<double> opt_timing_;
+    std::vector<int> num_nodes_;
+
+  private:
+    bool problem_lock_ = false;
+    ceres::VectorOfConstraints constraints_;
+    ceres::Problem problem_;
+    ceres::Solver::Options options_;
+    ceres::Solver::Summary summary_;
+    ceres::LossFunction *loss_function_ = NULL;
+    ceres::LocalParameterization *quaternion_local_parameterization_ =
+        new ceres::EigenQuaternionParameterization;
   };
-  ~Pgo(){};
-
-  void addPoseToPgoProblem(const Transformation t, const int frame_id);
-  void addSequentialConstraintToPgoProblem(const Transformation t_be,
-                                           const int frame_id_b,
-                                           const int frame_id_e);
-  void addLoopConstraintToPgoProblem(const Transformation t_be,
-                                     const int frame_id_b,
-                                     const int frame_id_e);
-  void updateKeyframeDatabase();
-  void purgeProblem();
-  /* The functions below are only used for testing */
-  void addConstraint(const Transformation& t_be, const int& frame_id_b,
-                     const int& frame_id_e, Eigen::Matrix<double, 6, 6>& info);
-  void solve();
-  bool searchKfIdInQueue(int id);
-  bool traceTimingData(std::string path);
-  ceres::MapOfPoses* poses_;
-  bool has_updated_result_;
-  std::vector<ceres::ResidualBlockId> seq_constraint_ids_;
-  std::deque<int> ignore_seq_constraint_kfs_;
-
-  /* Vectors to record timings */
-  std::vector<double> opt_timing_;
-  std::vector<int> num_nodes_;
-
-private:
-  bool problem_lock_ = false;
-  ceres::VectorOfConstraints constraints_;
-  ceres::Problem problem_;
-  ceres::Solver::Options options_;
-  ceres::Solver::Summary summary_;
-  ceres::LossFunction* loss_function_ = NULL;
-  ceres::LocalParameterization* quaternion_local_parameterization_ =
-      new ceres::EigenQuaternionParameterization;
-};
 }

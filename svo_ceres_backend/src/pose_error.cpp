@@ -5,7 +5,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -42,110 +42,112 @@
 #include "svo/ceres_backend/estimator_types.hpp"
 #include "svo/ceres_backend/pose_local_parameterization.hpp"
 
-namespace svo {
-namespace ceres_backend {
-
-// Construct with measurement and information matrix.
-PoseError::PoseError(const Transformation& measurement,
-                     const Eigen::Matrix<double, 6, 6>& information)
+namespace svo
 {
-  setMeasurement(measurement);
-  setInformation(information);
-}
-
-// Construct with measurement and variance.
-PoseError::PoseError(const Transformation& measurement,
-                     double translation_variance, double rotation_variance)
-{
-  DEBUG_CHECK_GT(translation_variance, 0.0);
-  DEBUG_CHECK_GT(rotation_variance, 0.0);
-  setMeasurement(measurement);
-
-  information_t information;
-  information.setZero();
-  information.topLeftCorner<3, 3>() = Eigen::Matrix3d::Identity() *
-                                      1.0 / translation_variance;
-  information.bottomRightCorner<3, 3>() = Eigen::Matrix3d::Identity() *
-                                          1.0 / rotation_variance;
-  setInformation(information);
-}
-
-// Set the information.
-void PoseError::setInformation(const information_t& information)
-{
-  information_ = information;
-  covariance_ = information.inverse();
-  // perform the Cholesky decomposition on order to obtain the correct error weighting
-  Eigen::LLT<information_t> lltOfInformation(information_);
-  square_root_information_ = lltOfInformation.matrixL().transpose();
-}
-
-// This evaluates the error term and additionally computes the Jacobians.
-bool PoseError::Evaluate(double const* const * parameters, double* residuals,
-                         double** jacobians) const
-{
-  return EvaluateWithMinimalJacobians(parameters, residuals, jacobians, nullptr);
-}
-
-// This evaluates the error term and additionally computes
-// the Jacobians in the minimal internal representation.
-bool PoseError::EvaluateWithMinimalJacobians(double const* const * parameters,
-                                             double* residuals,
-                                             double** jacobians,
-                                             double** jacobians_minimal) const
-{
-  // compute error
-  Transformation T_WS(
-      Eigen::Vector3d(parameters[0][0], parameters[0][1], parameters[0][2]),
-      Eigen::Quaterniond(parameters[0][6], parameters[0][3], parameters[0][4],
-                         parameters[0][5]));
-  // delta pose
-  Transformation dp = measurement_ * T_WS.inverse();
-  // get the error
-  Eigen::Matrix<double, 6, 1> error;
-  const Eigen::Vector3d dtheta = 2 * dp.getRotation().imaginary();
-  error.head<3>() = measurement_.getPosition() - T_WS.getPosition();
-  error.tail<3>() = dtheta;
-
-  // weigh it
-  Eigen::Map<Eigen::Matrix<double, 6, 1> > weighted_error(residuals);
-  weighted_error = square_root_information_ * error;
-
-  // compute Jacobian...
-  if (jacobians != nullptr)
+  namespace ceres_backend
   {
-    if (jacobians[0] != nullptr)
+
+    // Construct with measurement and information matrix.
+    PoseError::PoseError(const Transformation &measurement,
+                         const Eigen::Matrix<double, 6, 6> &information)
     {
-      Eigen::Map<Eigen::Matrix<double, 6, 7, Eigen::RowMajor> >
-          J0(jacobians[0]);
-      Eigen::Matrix<double, 6, 6, Eigen::RowMajor> J0_minimal;
-      J0_minimal.setIdentity();
-      J0_minimal *= -1.0;
-      J0_minimal.block<3, 3>(3, 3) =
-          -quaternionPlusMatrix(dp.getEigenQuaternion()).topLeftCorner<3, 3>();
-      J0_minimal = (square_root_information_ * J0_minimal).eval();
+      setMeasurement(measurement);
+      setInformation(information);
+    }
 
-      // pseudo inverse of the local parametrization Jacobian:
-      Eigen::Matrix<double, 6, 7, Eigen::RowMajor> J_lift;
-      PoseLocalParameterization::liftJacobian(parameters[0], J_lift.data());
+    // Construct with measurement and variance.
+    PoseError::PoseError(const Transformation &measurement,
+                         double translation_variance, double rotation_variance)
+    {
+      DEBUG_CHECK_GT(translation_variance, 0.0);
+      DEBUG_CHECK_GT(rotation_variance, 0.0);
+      setMeasurement(measurement);
 
-      // hallucinate Jacobian w.r.t. state
-      J0 = J0_minimal * J_lift;
+      information_t information;
+      information.setZero();
+      information.topLeftCorner<3, 3>() = Eigen::Matrix3d::Identity() *
+                                          1.0 / translation_variance;
+      information.bottomRightCorner<3, 3>() = Eigen::Matrix3d::Identity() *
+                                              1.0 / rotation_variance;
+      setInformation(information);
+    }
 
-      if (jacobians_minimal != nullptr)
+    // Set the information.
+    void PoseError::setInformation(const information_t &information)
+    {
+      information_ = information;
+      covariance_ = information.inverse();
+      // perform the Cholesky decomposition on order to obtain the correct error weighting
+      Eigen::LLT<information_t> lltOfInformation(information_);
+      square_root_information_ = lltOfInformation.matrixL().transpose();
+    }
+
+    // This evaluates the error term and additionally computes the Jacobians.
+    bool PoseError::Evaluate(double const *const *parameters, double *residuals,
+                             double **jacobians) const
+    {
+      return EvaluateWithMinimalJacobians(parameters, residuals, jacobians, nullptr);
+    }
+
+    // This evaluates the error term and additionally computes
+    // the Jacobians in the minimal internal representation.
+    bool PoseError::EvaluateWithMinimalJacobians(double const *const *parameters,
+                                                 double *residuals,
+                                                 double **jacobians,
+                                                 double **jacobians_minimal) const
+    {
+      // compute error
+      Transformation T_WS(
+          Eigen::Vector3d(parameters[0][0], parameters[0][1], parameters[0][2]),
+          Eigen::Quaterniond(parameters[0][6], parameters[0][3], parameters[0][4],
+                             parameters[0][5]));
+      // delta pose
+      Transformation dp = measurement_ * T_WS.inverse();
+      // get the error
+      Eigen::Matrix<double, 6, 1> error;
+      const Eigen::Vector3d dtheta = 2 * dp.getRotation().imaginary();
+      error.head<3>() = measurement_.getPosition() - T_WS.getPosition();
+      error.tail<3>() = dtheta;
+
+      // weigh it
+      Eigen::Map<Eigen::Matrix<double, 6, 1>> weighted_error(residuals);
+      weighted_error = square_root_information_ * error;
+
+      // compute Jacobian...
+      if (jacobians != nullptr)
       {
-        if (jacobians_minimal[0] != nullptr)
+        if (jacobians[0] != nullptr)
         {
-          Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor> >
-              J0_minimal_mapped(jacobians_minimal[0]);
-          J0_minimal_mapped = J0_minimal;
+          Eigen::Map<Eigen::Matrix<double, 6, 7, Eigen::RowMajor>>
+              J0(jacobians[0]);
+          Eigen::Matrix<double, 6, 6, Eigen::RowMajor> J0_minimal;
+          J0_minimal.setIdentity();
+          J0_minimal *= -1.0;
+          J0_minimal.block<3, 3>(3, 3) =
+              -quaternionPlusMatrix(dp.getEigenQuaternion()).topLeftCorner<3, 3>();
+          J0_minimal = (square_root_information_ * J0_minimal).eval();
+
+          // pseudo inverse of the local parametrization Jacobian:
+          Eigen::Matrix<double, 6, 7, Eigen::RowMajor> J_lift;
+          PoseLocalParameterization::liftJacobian(parameters[0], J_lift.data());
+
+          // hallucinate Jacobian w.r.t. state
+          J0 = J0_minimal * J_lift;
+
+          if (jacobians_minimal != nullptr)
+          {
+            if (jacobians_minimal[0] != nullptr)
+            {
+              Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor>>
+                  J0_minimal_mapped(jacobians_minimal[0]);
+              J0_minimal_mapped = J0_minimal;
+            }
+          }
         }
       }
+
+      return true;
     }
-  }
 
-  return true;
-}
-
-}  // namespace ceres_backend
-}  // namespace svo
+  } // namespace ceres_backend
+} // namespace svo

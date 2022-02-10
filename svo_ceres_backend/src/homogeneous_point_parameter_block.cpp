@@ -5,7 +5,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -40,36 +40,38 @@
 
 #include "svo/ceres_backend/homogeneous_point_parameter_block.hpp"
 
-namespace svo {
-namespace ceres_backend {
-
-// Default constructor (assumes not fixed).
-HomogeneousPointParameterBlock::HomogeneousPointParameterBlock()
-    : ParameterBlock::ParameterBlock(),
-      initialized_(false)
+namespace svo
 {
-  setFixed(false);
-}
+  namespace ceres_backend
+  {
 
-// Constructor with estimate and time.
-HomogeneousPointParameterBlock::HomogeneousPointParameterBlock(
-    const Eigen::Vector4d& point, uint64_t id, bool initialized)
-{
-  setEstimate(point);
-  setId(id);
-  setInitialized(initialized);
-  setFixed(false);
-}
+    // Default constructor (assumes not fixed).
+    HomogeneousPointParameterBlock::HomogeneousPointParameterBlock()
+        : ParameterBlock::ParameterBlock(),
+          initialized_(false)
+    {
+      setFixed(false);
+    }
 
-// Constructor with estimate and time.
-HomogeneousPointParameterBlock::HomogeneousPointParameterBlock(
-    const Eigen::Vector3d& point, uint64_t id, bool initialized)
-{
-  setEstimate(Eigen::Vector4d(point[0], point[1], point[2], 1.0));
-  setId(id);
-  setInitialized(initialized);
-  setFixed(false);
-}
+    // Constructor with estimate and time.
+    HomogeneousPointParameterBlock::HomogeneousPointParameterBlock(
+        const Eigen::Vector4d &point, uint64_t id, bool initialized)
+    {
+      setEstimate(point);
+      setId(id);
+      setInitialized(initialized);
+      setFixed(false);
+    }
 
-}  // namespace ceres_backend
-}  // namespace svo
+    // Constructor with estimate and time.
+    HomogeneousPointParameterBlock::HomogeneousPointParameterBlock(
+        const Eigen::Vector3d &point, uint64_t id, bool initialized)
+    {
+      setEstimate(Eigen::Vector4d(point[0], point[1], point[2], 1.0));
+      setId(id);
+      setInitialized(initialized);
+      setFixed(false);
+    }
+
+  } // namespace ceres_backend
+} // namespace svo

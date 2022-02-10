@@ -24,12 +24,12 @@ TEST(okvisTestSuite, RelativePoseError)
   {
     svo::Transformation T1, T2;
     T1.setRandom(
-          svo::test_utils::sampleUniformRealDistribution<double>(deterministic),
-          svo::test_utils::sampleUniformRealDistribution<double>(
+        svo::test_utils::sampleUniformRealDistribution<double>(deterministic),
+        svo::test_utils::sampleUniformRealDistribution<double>(
             deterministic, 0.0, M_PI));
     T2.setRandom(
-          svo::test_utils::sampleUniformRealDistribution<double>(deterministic),
-          svo::test_utils::sampleUniformRealDistribution<double>(
+        svo::test_utils::sampleUniformRealDistribution<double>(deterministic),
+        svo::test_utils::sampleUniformRealDistribution<double>(
             deterministic, 0.0, M_PI));
 
     // create and add parameter blocks first constant, second variable
@@ -50,7 +50,7 @@ TEST(okvisTestSuite, RelativePoseError)
         std::make_shared<svo::ceres_backend::RelativePoseError>(1.0, 1.0);
     // add it
     ceres::ResidualBlockId res_id = map.addResidualBlock(
-          relative_pose_error, nullptr, pose_parameter_block1, pose_parameter_block2);
+        relative_pose_error, nullptr, pose_parameter_block1, pose_parameter_block2);
     // check Jacobian
     EXPECT_TRUE(map.isMinimalJacobianCorrect(res_id, jacobian_rel_tol))
         << "Jacobian verification on homogeneous point error failed.";

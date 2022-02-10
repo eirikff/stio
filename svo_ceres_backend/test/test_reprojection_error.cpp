@@ -49,8 +49,6 @@
 #include "svo/ceres_backend/homogeneous_point_parameter_block.hpp"
 #include "svo/ceres_backend/map.hpp"
 
-
-
 TEST(okvisTestSuite, ReprojectionError)
 {
   constexpr size_t num_points = 1000;
@@ -66,21 +64,21 @@ TEST(okvisTestSuite, ReprojectionError)
   svo::Transformation T_WS; // world to sensor
 
   T_WS.setRandom(svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
-                   deterministic, 1.0, 10.0),
+                     deterministic, 1.0, 10.0),
                  svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
-                   deterministic, 0.0, M_PI));
+                     deterministic, 0.0, M_PI));
   svo::Transformation T_disturb;
   T_disturb.setRandom(
-        svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
+      svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
           deterministic, 0.0, 1.0),
-        svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
+      svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
           deterministic, 0.0, 0.01));
   svo::Transformation T_WS_init = T_WS * T_disturb; // world to sensor
-  svo::Transformation T_SC; // sensor to camera
+  svo::Transformation T_SC;                         // sensor to camera
   T_SC.setRandom(
-        svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
+      svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
           deterministic, 0.0, 0.2),
-        svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
+      svo::test_utils::sampleUniformRealDistribution<svo::FloatType>(
           deterministic, 0.0, M_PI));
 
   // Create parameter blocks.
@@ -96,7 +94,7 @@ TEST(okvisTestSuite, ReprojectionError)
   // Set variable / constant
   map.setParameterBlockVariable(1);
   map.setParameterBlockConstant(2);
-  std::cout<<" [ OK ] "<<std::endl;
+  std::cout << " [ OK ] " << std::endl;
 
   // set up a random camera geometry
   std::cout << "set up a random camera geometry... " << std::flush;
@@ -122,16 +120,15 @@ TEST(okvisTestSuite, ReprojectionError)
       svo::test_utils::generateRandomVisible3dPoints(*cameraGeometry, num_points, 2.0, 10.0);
 
   keypoints += svo::test_utils::randomMatrixNormalDistributed<2, num_points>(
-        deterministic, 0.0, keypoint_sigma);
-  const Eigen::Matrix2d information=Eigen::Matrix2d::Identity();
+      deterministic, 0.0, keypoint_sigma);
+  const Eigen::Matrix2d information = Eigen::Matrix2d::Identity();
   for (size_t i = 1; i < 100; ++i)
   {
     std::shared_ptr<svo::ceres_backend::HomogeneousPointParameterBlock>
         homogeneousPointParameterBlock =
-        std::make_shared<svo::ceres_backend::HomogeneousPointParameterBlock>(
-          (T_WS * T_SC).transform4(
-            static_cast<Eigen::Vector4d>(points_homogeneous.col(i))),
-          i + 2);
+            std::make_shared<svo::ceres_backend::HomogeneousPointParameterBlock>(
+                (T_WS * T_SC).transform4(static_cast<Eigen::Vector4d>(points_homogeneous.col(i))),
+                i + 2);
     map.addParameterBlock(homogeneousPointParameterBlock,
                           svo::ceres_backend::Map::HomogeneousPoint);
     map.setParameterBlockConstant(i + 2);
@@ -139,24 +136,24 @@ TEST(okvisTestSuite, ReprojectionError)
     // Set up the residual
     std::shared_ptr<ceres::CostFunction>
         reprojection_error(
-          new svo::ceres_backend::ReprojectionError(
-            cameraGeometry, keypoints.col(i), information));
+            new svo::ceres_backend::ReprojectionError(
+                cameraGeometry, keypoints.col(i), information));
     ceres::ResidualBlockId id =
         map.addResidualBlock(
-          reprojection_error, nullptr, poseParameterBlock,
-          homogeneousPointParameterBlock, extrinsicsParameterBlock);
+            reprojection_error, nullptr, poseParameterBlock,
+            homogeneousPointParameterBlock, extrinsicsParameterBlock);
     EXPECT_TRUE(map.isMinimalJacobianCorrect(id, jacobian_tol));
   }
-  std::cout<<" [ OK ] "<<std::endl;
+  std::cout << " [ OK ] " << std::endl;
 
   // Run the solver!
   std::cout << "run the solver... " << std::endl;
   ceres::Solver::Options options;
-  //options.check_gradients=true;
-  //options.numeric_derivative_relative_step_size = 1e-6;
-  //options.gradient_check_relative_precision=1e-2;
+  // options.check_gradients=true;
+  // options.numeric_derivative_relative_step_size = 1e-6;
+  // options.gradient_check_relative_precision=1e-2;
   options.minimizer_progress_to_stdout = false;
-  ::FLAGS_stderrthreshold=google::WARNING; // enable console warnings (Jacobian verification)
+  ::FLAGS_stderrthreshold = google::WARNING; // enable console warnings (Jacobian verification)
   map.options = options;
   map.solve();
 
@@ -167,11 +164,17 @@ TEST(okvisTestSuite, ReprojectionError)
             << "correct T_WS : " << T_WS.getTransformationMatrix() << "\n";
 
   // make sure it converged
-  EXPECT_LT(2*(T_WS.getEigenQuaternion()*poseParameterBlock->estimate()
-               .getEigenQuaternion().inverse()).vec().norm(),
-            1e-2) << "quaternions not close enough";
-  EXPECT_LT((T_WS.getPosition()-poseParameterBlock->estimate()
-             .getPosition()).norm(), 1e-1)
+  EXPECT_LT(2 * (T_WS.getEigenQuaternion() * poseParameterBlock->estimate()
+                                                 .getEigenQuaternion()
+                                                 .inverse())
+                    .vec()
+                    .norm(),
+            1e-2)
+      << "quaternions not close enough";
+  EXPECT_LT((T_WS.getPosition() - poseParameterBlock->estimate()
+                                      .getPosition())
+                .norm(),
+            1e-1)
       << "translation not close enough";
 }
 

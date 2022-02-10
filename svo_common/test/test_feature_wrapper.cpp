@@ -8,8 +8,8 @@
 #include <eigen-checks/gtest.h>
 #include <svo/common/feature_wrapper.h>
 
-template<class T>
-typename std::enable_if<std::is_integral<T>::value, std::function<T()> >::type
+template <class T>
+typename std::enable_if<std::is_integral<T>::value, std::function<T()>>::type
 getRandomGenerator()
 {
   std::default_random_engine generator;
@@ -19,8 +19,8 @@ getRandomGenerator()
   return random_val;
 }
 
-template<class T>
-typename std::enable_if<!std::is_integral<T>::value, std::function<T()> >::type
+template <class T>
+typename std::enable_if<!std::is_integral<T>::value, std::function<T()>>::type
 getRandomGenerator()
 {
   std::default_random_engine generator;

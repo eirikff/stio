@@ -5,7 +5,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -50,114 +50,116 @@
 #include "svo/ceres_backend/estimator_types.hpp"
 #include "svo/ceres_backend/parameter_block.hpp"
 
-namespace svo {
-namespace ceres_backend {
-
-/// \brief Wraps the parameter block for a speed / IMU biases estimate
-class SpeedAndBiasParameterBlock : public ParameterBlock
+namespace svo
 {
- public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-  typedef SpeedAndBias estimate_t;
-
-  static constexpr size_t c_dimension = 9;
-  static constexpr size_t c_minimal_dimension = 9;
-
-  /// \brief Default constructor (assumes not fixed).
-  SpeedAndBiasParameterBlock();
-
-  /// \brief Constructor with estimate and id.
-  /// @param[in] speedAndBias The speed and bias estimate.
-  /// @param[in] id The (unique) ID of this block.
-  SpeedAndBiasParameterBlock(const SpeedAndBias& speed_and_bias, uint64_t id);
-
-  virtual ~SpeedAndBiasParameterBlock() {}
-
-  // ---------------------------------------------------------------------------
-  // Setters
-
-  virtual void setEstimate(const SpeedAndBias& speed_and_bias)
+  namespace ceres_backend
   {
-    estimate_ = speed_and_bias;
-  }
 
-  // ---------------------------------------------------------------------------
-  // Getters
+    /// \brief Wraps the parameter block for a speed / IMU biases estimate
+    class SpeedAndBiasParameterBlock : public ParameterBlock
+    {
+    public:
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  virtual const SpeedAndBias& estimate() const { return estimate_; }
+      typedef SpeedAndBias estimate_t;
 
-  virtual double* parameters() { return estimate_.data(); }
+      static constexpr size_t c_dimension = 9;
+      static constexpr size_t c_minimal_dimension = 9;
 
-  virtual const double* parameters() const { return estimate_.data(); }
+      /// \brief Default constructor (assumes not fixed).
+      SpeedAndBiasParameterBlock();
 
-  virtual size_t dimension() const { return c_dimension; }
+      /// \brief Constructor with estimate and id.
+      /// @param[in] speedAndBias The speed and bias estimate.
+      /// @param[in] id The (unique) ID of this block.
+      SpeedAndBiasParameterBlock(const SpeedAndBias &speed_and_bias, uint64_t id);
 
-  virtual size_t minimalDimension() const { return c_minimal_dimension; }
+      virtual ~SpeedAndBiasParameterBlock() {}
 
-  // minimal internal parameterization
-  // x0_plus_Delta=Delta_Chi[+]x0
-  /// \brief Generalization of the addition operation,
-  ///        x_plus_delta = Plus(x, delta)
-  ///        with the condition that Plus(x, 0) = x.
-  /// @param[in] x0 Variable.
-  /// @param[in] Delta_Chi Perturbation.
-  /// @param[out] x0_plus_Delta Perturbed x.
-  virtual void plus(const double* x0, const double* Delta_Chi,
-                    double* x0_plus_Delta) const
-  {
-    Eigen::Map<const Eigen::Matrix<double, 9, 1> > x0_(x0);
-    Eigen::Map<const Eigen::Matrix<double, 9, 1> > Delta_Chi_(Delta_Chi);
-    Eigen::Map<Eigen::Matrix<double, 9, 1> > x0_plus_Delta_(x0_plus_Delta);
-    x0_plus_Delta_ = x0_ + Delta_Chi_;
-  }
+      // ---------------------------------------------------------------------------
+      // Setters
 
-  /// \brief The jacobian of Plus(x, delta) w.r.t delta at delta = 0.
-  /// @param[in] x0 Variable.
-  /// @param[out] jacobian The Jacobian.
-  virtual void plusJacobian(const double* /*unused: x*/,
-                            double* jacobian) const
-  {
-    Eigen::Map<Eigen::Matrix<double, 9, 9, Eigen::RowMajor> > identity(jacobian);
-    identity.setIdentity();
-  }
+      virtual void setEstimate(const SpeedAndBias &speed_and_bias)
+      {
+        estimate_ = speed_and_bias;
+      }
 
-  // Delta_Chi=x0_plus_Delta[-]x0
-  /// \brief Computes the minimal difference between a variable x and a
-  ///        perturbed variable x_plus_delta
-  /// @param[in] x0 Variable.
-  /// @param[in] x0_plus_Delta Perturbed variable.
-  /// @param[out] Delta_Chi Minimal difference.
-  /// \return True on success.
-  virtual void minus(const double* x0, const double* x0_plus_Delta,
-                     double* Delta_Chi) const
-  {
-    Eigen::Map<const Eigen::Matrix<double, 9, 1> > x0_(x0);
-    Eigen::Map<Eigen::Matrix<double, 9, 1> > Delta_Chi_(Delta_Chi);
-    Eigen::Map<const Eigen::Matrix<double, 9, 1> > x0_plus_Delta_(x0_plus_Delta);
-    Delta_Chi_ = x0_plus_Delta_ - x0_;
-  }
+      // ---------------------------------------------------------------------------
+      // Getters
 
-  /// \brief Computes the Jacobian from minimal space to naively
-  ///        overparameterised space as used by ceres.
-  /// @param[out] jacobian the Jacobian (dimension minDim x dim).
-  /// \return True on success.
-  virtual void liftJacobian(const double* /*unused: x*/,
-                            double* jacobian) const
-  {
-    Eigen::Map<Eigen::Matrix<double, 9, 9, Eigen::RowMajor> > identity(jacobian);
-    identity.setIdentity();
-  }
+      virtual const SpeedAndBias &estimate() const { return estimate_; }
 
-  /// @brief Return parameter block type as string
-  virtual std::string typeInfo() const
-  {
-    return "SpeedAndBiasParameterBlock";
-  }
+      virtual double *parameters() { return estimate_.data(); }
 
- private:
-  SpeedAndBias estimate_;
-};
+      virtual const double *parameters() const { return estimate_.data(); }
 
-}  // namespace ceres_backend
-}  // namespace svo
+      virtual size_t dimension() const { return c_dimension; }
+
+      virtual size_t minimalDimension() const { return c_minimal_dimension; }
+
+      // minimal internal parameterization
+      // x0_plus_Delta=Delta_Chi[+]x0
+      /// \brief Generalization of the addition operation,
+      ///        x_plus_delta = Plus(x, delta)
+      ///        with the condition that Plus(x, 0) = x.
+      /// @param[in] x0 Variable.
+      /// @param[in] Delta_Chi Perturbation.
+      /// @param[out] x0_plus_Delta Perturbed x.
+      virtual void plus(const double *x0, const double *Delta_Chi,
+                        double *x0_plus_Delta) const
+      {
+        Eigen::Map<const Eigen::Matrix<double, 9, 1>> x0_(x0);
+        Eigen::Map<const Eigen::Matrix<double, 9, 1>> Delta_Chi_(Delta_Chi);
+        Eigen::Map<Eigen::Matrix<double, 9, 1>> x0_plus_Delta_(x0_plus_Delta);
+        x0_plus_Delta_ = x0_ + Delta_Chi_;
+      }
+
+      /// \brief The jacobian of Plus(x, delta) w.r.t delta at delta = 0.
+      /// @param[in] x0 Variable.
+      /// @param[out] jacobian The Jacobian.
+      virtual void plusJacobian(const double * /*unused: x*/,
+                                double *jacobian) const
+      {
+        Eigen::Map<Eigen::Matrix<double, 9, 9, Eigen::RowMajor>> identity(jacobian);
+        identity.setIdentity();
+      }
+
+      // Delta_Chi=x0_plus_Delta[-]x0
+      /// \brief Computes the minimal difference between a variable x and a
+      ///        perturbed variable x_plus_delta
+      /// @param[in] x0 Variable.
+      /// @param[in] x0_plus_Delta Perturbed variable.
+      /// @param[out] Delta_Chi Minimal difference.
+      /// \return True on success.
+      virtual void minus(const double *x0, const double *x0_plus_Delta,
+                         double *Delta_Chi) const
+      {
+        Eigen::Map<const Eigen::Matrix<double, 9, 1>> x0_(x0);
+        Eigen::Map<Eigen::Matrix<double, 9, 1>> Delta_Chi_(Delta_Chi);
+        Eigen::Map<const Eigen::Matrix<double, 9, 1>> x0_plus_Delta_(x0_plus_Delta);
+        Delta_Chi_ = x0_plus_Delta_ - x0_;
+      }
+
+      /// \brief Computes the Jacobian from minimal space to naively
+      ///        overparameterised space as used by ceres.
+      /// @param[out] jacobian the Jacobian (dimension minDim x dim).
+      /// \return True on success.
+      virtual void liftJacobian(const double * /*unused: x*/,
+                                double *jacobian) const
+      {
+        Eigen::Map<Eigen::Matrix<double, 9, 9, Eigen::RowMajor>> identity(jacobian);
+        identity.setIdentity();
+      }
+
+      /// @brief Return parameter block type as string
+      virtual std::string typeInfo() const
+      {
+        return "SpeedAndBiasParameterBlock";
+      }
+
+    private:
+      SpeedAndBias estimate_;
+    };
+
+  } // namespace ceres_backend
+} // namespace svo

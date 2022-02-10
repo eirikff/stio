@@ -5,24 +5,25 @@
 
 namespace svo
 {
-class NullBuffer : public std::streambuf
-{
-public:
-  int overflow(int c)
+  class NullBuffer : public std::streambuf
   {
-    return c;
-  }
-};
+  public:
+    int overflow(int c)
+    {
+      return c;
+    }
+  };
 
-class NullStream : public std::ostream
-{
-public:
-  NullStream() : std::ostream(&buffer_)
+  class NullStream : public std::ostream
   {
-  }
-private:
-  NullBuffer buffer_;
-};
+  public:
+    NullStream() : std::ostream(&buffer_)
+    {
+    }
 
-extern NullStream kNullOutput;
+  private:
+    NullBuffer buffer_;
+  };
+
+  extern NullStream kNullOutput;
 }

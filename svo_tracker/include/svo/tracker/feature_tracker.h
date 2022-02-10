@@ -5,68 +5,71 @@
 #include <svo/common/transformation.h>
 #include <svo/tracker/feature_tracking_types.h>
 
-namespace svo {
-
-// Forward declarations.
-class AbstractDetector;
-struct DetectorOptions;
-
-class FeatureTracker
+namespace svo
 {
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  typedef std::shared_ptr<FeatureTracker> Ptr;
 
-  FeatureTracker() = delete;
+  // Forward declarations.
+  class AbstractDetector;
+  struct DetectorOptions;
 
-  /// Provide number of frames per frame_bundle
-  FeatureTracker(
-      const FeatureTrackerOptions& options,
-      const DetectorOptions& detector_options,
-      const CameraBundlePtr& cams);
+  class FeatureTracker
+  {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    typedef std::shared_ptr<FeatureTracker> Ptr;
 
-  /// Tracks current features and if many tracks terminate, automatically
-  /// initializes new tracks.
-  void trackAndDetect(const FrameBundlePtr& nframe_kp1);
+    FeatureTracker() = delete;
 
-  /// Tracks a frame bundle. Returns number of tracked features.
-  size_t trackFrameBundle(const FrameBundlePtr& nframe_kp1);
+    /// Provide number of frames per frame_bundle
+    FeatureTracker(
+        const FeatureTrackerOptions &options,
+        const DetectorOptions &detector_options,
+        const CameraBundlePtr &cams);
 
-  /// Extract new features
-  size_t initializeNewTracks(const FrameBundlePtr& nframe_k);
+    /// Tracks current features and if many tracks terminate, automatically
+    /// initializes new tracks.
+    void trackAndDetect(const FrameBundlePtr &nframe_kp1);
 
-  const FeatureTracks& getActiveTracks(size_t frame_index) const;
+    /// Tracks a frame bundle. Returns number of tracked features.
+    size_t trackFrameBundle(const FrameBundlePtr &nframe_kp1);
 
-  size_t getTotalActiveTracks() const;
+    /// Extract new features
+    size_t initializeNewTracks(const FrameBundlePtr &nframe_k);
 
-  /// pivot_ration needs to be in range(0,1) and if 0.5 the disparity that
-  /// is returned per frame is the median. If 0.25 it means that 25% of the
-  /// tracks have a higher disparity than returned.
-  void getNumTrackedAndDisparityPerFrame(
-      double pivot_ratio,
-      std::vector<size_t>* num_tracked,
-      std::vector<double>* disparity) const;
+    const FeatureTracks &getActiveTracks(size_t frame_index) const;
 
-  FrameBundlePtr getOldestFrameInTrack(size_t frame_index) const;
+    size_t getTotalActiveTracks() const;
 
-  void resetActiveTracks();
+    /// pivot_ration needs to be in range(0,1) and if 0.5 the disparity that
+    /// is returned per frame is the median. If 0.25 it means that 25% of the
+    /// tracks have a higher disparity than returned.
+    void getNumTrackedAndDisparityPerFrame(
+        double pivot_ratio,
+        std::vector<size_t> *num_tracked,
+        std::vector<double> *disparity) const;
 
-  void resetTerminatedTracks();
+    FrameBundlePtr getOldestFrameInTrack(size_t frame_index) const;
 
-  /// Clear all stored data.
-  void reset();
+    void resetActiveTracks();
 
-//private:
+    void resetTerminatedTracks();
 
-  FeatureTrackerOptions options_;
+    /// Clear all stored data.
+    void reset();
 
-  // A vector for each frame in the bundle.
-  const size_t bundle_size_;
-  std::vector<std::shared_ptr<AbstractDetector>> detectors_;
-  std::vector<FeatureTracks,
-  Eigen::aligned_allocator<FeatureTracks> > active_tracks_;
-  std::vector<FeatureTracks,
-  Eigen::aligned_allocator<FeatureTracks> > terminated_tracks_;
-};
+    // private:
+
+    FeatureTrackerOptions options_;
+
+    // A vector for each frame in the bundle.
+    const size_t bundle_size_;
+    std::vector<std::shared_ptr<AbstractDetector>> detectors_;
+    std::vector<FeatureTracks,
+                Eigen::aligned_allocator<FeatureTracks>>
+        active_tracks_;
+    std::vector<FeatureTracks,
+                Eigen::aligned_allocator<FeatureTracks>>
+        terminated_tracks_;
+  };
 
 } // namespace svo

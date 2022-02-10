@@ -5,7 +5,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -45,69 +45,69 @@
 
 #include <ceres/iteration_callback.h>
 
-namespace svo {
-namespace ceres_backend {
-
-/**
- * @brief The CeresIterationCallback class tries to enforce a time limit on the
- *        optimization. It does not guarantee to stay within the time budget as
- *        it assumes the next iteration takes as long as the previous iteration.
- */
-class CeresIterationCallback : public ceres::IterationCallback
+namespace svo
 {
- public:
-
-  /**
-   * @brief The constructor.
-   * @param[in] time_limit Time budget for the optimization.
-   * @param[in] iteration_minimum Minimum iterations the optimization should
-   *            perform disregarding the time.
-   */
-  CeresIterationCallback(double time_limit, int iteration_minimum)
-      : time_limit_(time_limit),
-        iteration_minimum_(iteration_minimum) {
-  }
-
-  virtual ~CeresIterationCallback() = default;
-
-  /// @brief This method is called after every iteration in ceres.
-  /// @param[in] summary The iteration summary.
-  ceres::CallbackReturnType operator()(
-      const ceres::IterationSummary& summary)
+  namespace ceres_backend
   {
-    // assume next iteration takes the same time as current iteration
-    if (summary.iteration >= iteration_minimum_
-        && summary.cumulative_time_in_seconds
-            + summary.iteration_time_in_seconds > time_limit_)
+
+    /**
+     * @brief The CeresIterationCallback class tries to enforce a time limit on the
+     *        optimization. It does not guarantee to stay within the time budget as
+     *        it assumes the next iteration takes as long as the previous iteration.
+     */
+    class CeresIterationCallback : public ceres::IterationCallback
     {
-      return ceres::SOLVER_TERMINATE_SUCCESSFULLY;
-    }
-    return ceres::SOLVER_CONTINUE;
-  }
+    public:
+      /**
+       * @brief The constructor.
+       * @param[in] time_limit Time budget for the optimization.
+       * @param[in] iteration_minimum Minimum iterations the optimization should
+       *            perform disregarding the time.
+       */
+      CeresIterationCallback(double time_limit, int iteration_minimum)
+          : time_limit_(time_limit),
+            iteration_minimum_(iteration_minimum)
+      {
+      }
 
-  /**
-   * @brief setTimeLimit changes time limit of optimization.
-   *        If you want to disable the time limit, either set it to a large value,
-   *        delete the callback in the ceres options or set the minimum iterations
-   *        to the maximum iteration.
-   * @param[in] time_limit desired time limit in seconds
-   */
-  void setTimeLimit(double time_limit) { time_limit_ = time_limit; }
+      virtual ~CeresIterationCallback() = default;
 
-  /**
-   * @brief iteration_minimum changes the minimum iterations the optimization
-   *        goes through disregarding the time limit
-   * @param iterationMinimum
-   */
-  void setMinimumIterations(int iteration_minimum)
-  {
-    iteration_minimum_ = iteration_minimum;
-  }
+      /// @brief This method is called after every iteration in ceres.
+      /// @param[in] summary The iteration summary.
+      ceres::CallbackReturnType operator()(
+          const ceres::IterationSummary &summary)
+      {
+        // assume next iteration takes the same time as current iteration
+        if (summary.iteration >= iteration_minimum_ && summary.cumulative_time_in_seconds + summary.iteration_time_in_seconds > time_limit_)
+        {
+          return ceres::SOLVER_TERMINATE_SUCCESSFULLY;
+        }
+        return ceres::SOLVER_CONTINUE;
+      }
 
- private:
-  double time_limit_; ///< The set time limit.
-  int iteration_minimum_; ///< The set maximum no. iterations.
-};
+      /**
+       * @brief setTimeLimit changes time limit of optimization.
+       *        If you want to disable the time limit, either set it to a large value,
+       *        delete the callback in the ceres options or set the minimum iterations
+       *        to the maximum iteration.
+       * @param[in] time_limit desired time limit in seconds
+       */
+      void setTimeLimit(double time_limit) { time_limit_ = time_limit; }
 
-}  // namespace ceres_backend
-}  // namespace svo
+      /**
+       * @brief iteration_minimum changes the minimum iterations the optimization
+       *        goes through disregarding the time limit
+       * @param iterationMinimum
+       */
+      void setMinimumIterations(int iteration_minimum)
+      {
+        iteration_minimum_ = iteration_minimum;
+      }
+
+    private:
+      double time_limit_;     ///< The set time limit.
+      int iteration_minimum_; ///< The set maximum no. iterations.
+    };
+
+  } // namespace ceres_backend
+} // namespace svo

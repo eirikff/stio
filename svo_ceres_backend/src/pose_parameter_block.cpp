@@ -5,7 +5,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -40,51 +40,53 @@
 
 #include "svo/ceres_backend/pose_parameter_block.hpp"
 
-namespace svo {
-namespace ceres_backend {
-
-// Default constructor (assumes not fixed).
-PoseParameterBlock::PoseParameterBlock()
-    : ParameterBlock::ParameterBlock()
+namespace svo
 {
-  setFixed(false);
-}
+  namespace ceres_backend
+  {
 
-// Trivial destructor.
-PoseParameterBlock::~PoseParameterBlock() {}
+    // Default constructor (assumes not fixed).
+    PoseParameterBlock::PoseParameterBlock()
+        : ParameterBlock::ParameterBlock()
+    {
+      setFixed(false);
+    }
 
-// Constructor with estimate.
-PoseParameterBlock::PoseParameterBlock(const Transformation& T_WS, uint64_t id)
-{
-  setEstimate(T_WS);
-  setId(id);
-  setFixed(false);
-}
+    // Trivial destructor.
+    PoseParameterBlock::~PoseParameterBlock() {}
 
-// setters
-// Set estimate of this parameter block.
-void PoseParameterBlock::setEstimate(const Transformation& T_WS)
-{
-  const Eigen::Vector3d& r = T_WS.getPosition();
-  const Quaternion& q = T_WS.getRotation();
-  parameters_[0] = r[0];
-  parameters_[1] = r[1];
-  parameters_[2] = r[2];
-  parameters_[3] = q.x();  // x
-  parameters_[4] = q.y();  // y
-  parameters_[5] = q.z();  // z
-  parameters_[6] = q.w();  // w
-}
+    // Constructor with estimate.
+    PoseParameterBlock::PoseParameterBlock(const Transformation &T_WS, uint64_t id)
+    {
+      setEstimate(T_WS);
+      setId(id);
+      setFixed(false);
+    }
 
-// getters
-// Get estimate.
-Transformation PoseParameterBlock::estimate() const
-{
-  return Transformation(
-      Eigen::Vector3d(parameters_[0], parameters_[1], parameters_[2]),
-      Eigen::Quaterniond(parameters_[6], parameters_[3], parameters_[4],
-                         parameters_[5]));
-}
+    // setters
+    // Set estimate of this parameter block.
+    void PoseParameterBlock::setEstimate(const Transformation &T_WS)
+    {
+      const Eigen::Vector3d &r = T_WS.getPosition();
+      const Quaternion &q = T_WS.getRotation();
+      parameters_[0] = r[0];
+      parameters_[1] = r[1];
+      parameters_[2] = r[2];
+      parameters_[3] = q.x(); // x
+      parameters_[4] = q.y(); // y
+      parameters_[5] = q.z(); // z
+      parameters_[6] = q.w(); // w
+    }
 
-}  // namespace ceres_backend
-}  // namespace svo
+    // getters
+    // Get estimate.
+    Transformation PoseParameterBlock::estimate() const
+    {
+      return Transformation(
+          Eigen::Vector3d(parameters_[0], parameters_[1], parameters_[2]),
+          Eigen::Quaterniond(parameters_[6], parameters_[3], parameters_[4],
+                             parameters_[5]));
+    }
+
+  } // namespace ceres_backend
+} // namespace svo

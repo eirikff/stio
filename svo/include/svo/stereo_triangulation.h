@@ -7,30 +7,31 @@
 
 #include <svo/global.h>
 
-namespace svo {
-
-struct StereoTriangulationOptions
+namespace svo
 {
-  size_t triangulate_n_features = 120;
-  double mean_depth_inv = 1.0/3.0;
-  double min_depth_inv = 1.0/1.0;
-  double max_depth_inv = 1.0/50.0;
-};
 
-class StereoTriangulation
-{
-public:
-  typedef std::shared_ptr<StereoTriangulation> Ptr;
+  struct StereoTriangulationOptions
+  {
+    size_t triangulate_n_features = 120;
+    double mean_depth_inv = 1.0 / 3.0;
+    double min_depth_inv = 1.0 / 1.0;
+    double max_depth_inv = 1.0 / 50.0;
+  };
 
-  StereoTriangulationOptions options_;
-  DetectorPtr feature_detector_;
+  class StereoTriangulation
+  {
+  public:
+    typedef std::shared_ptr<StereoTriangulation> Ptr;
 
-  StereoTriangulation(
-      const StereoTriangulationOptions& options,
-      const DetectorPtr& feature_detector);
-  ~StereoTriangulation() = default;
+    StereoTriangulationOptions options_;
+    DetectorPtr feature_detector_;
 
-  void compute(const FramePtr& frame0, const FramePtr& frame1);
-};
+    StereoTriangulation(
+        const StereoTriangulationOptions &options,
+        const DetectorPtr &feature_detector);
+    ~StereoTriangulation() = default;
+
+    void compute(const FramePtr &frame0, const FramePtr &frame1);
+  };
 
 } // namespace svo

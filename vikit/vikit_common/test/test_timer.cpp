@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-#include <iomanip>      // std::setprecision
+#include <iomanip> // std::setprecision
 #include <vikit/timer.h>
 
 int main(int argc, char **argv)

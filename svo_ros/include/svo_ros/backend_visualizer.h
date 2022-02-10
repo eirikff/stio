@@ -15,58 +15,59 @@
 #include <svo/common/transformation.h>
 #include <svo/backend/smart_factors_fwd.h>
 
-namespace swe {
+namespace swe
+{
   class SweGtsamBookeeper;
 }
-namespace svo {
-
-/// Publish visualisation messages to ROS.
-class CeresBackendPublisher
+namespace svo
 {
-public:
-  typedef std::shared_ptr<CeresBackendPublisher> Ptr;
-  typedef pcl::PointXYZ PointType;
-  typedef pcl::PointCloud<PointType> PointCloud;
 
-  static const std::string kWorldFrame;
+  /// Publish visualisation messages to ROS.
+  class CeresBackendPublisher
+  {
+  public:
+    typedef std::shared_ptr<CeresBackendPublisher> Ptr;
+    typedef pcl::PointXYZ PointType;
+    typedef pcl::PointCloud<PointType> PointCloud;
 
-  ros::NodeHandle pnh_;
-  size_t trace_id_;
-  std::string trace_dir_;
-  ros::Publisher pub_markers_;
-  ros::Publisher pub_pc_;
-  double vis_scale_;
-  std::ofstream ofs_states_;
-  std::ofstream ofs_covariance_;
+    static const std::string kWorldFrame;
 
-  CeresBackendPublisher(const std::string& trace_dir,
-                    const ros::NodeHandle& pnh);
+    ros::NodeHandle pnh_;
+    size_t trace_id_;
+    std::string trace_dir_;
+    ros::Publisher pub_markers_;
+    ros::Publisher pub_pc_;
+    double vis_scale_;
+    std::ofstream ofs_states_;
+    std::ofstream ofs_covariance_;
 
-  ~CeresBackendPublisher() = default;
+    CeresBackendPublisher(const std::string &trace_dir,
+                          const ros::NodeHandle &pnh);
 
-  void visualizeFrames(const gtsam::Values& values);
+    ~CeresBackendPublisher() = default;
 
-  void visualizePoints(const gtsam::Values& values);
+    void visualizeFrames(const gtsam::Values &values);
 
-  void publishPointcloud(const gtsam::Values& values);
+    void visualizePoints(const gtsam::Values &values);
 
-  void visualizeSmartFactors(const SmartFactorMap& smart_factors);
+    void publishPointcloud(const gtsam::Values &values);
 
-  void visualizeVelocity(const gtsam::Values& values);
+    void visualizeSmartFactors(const SmartFactorMap &smart_factors);
 
-  void visualizePoseCovariance(
-      const Transformation& T_W_B,
-      const Eigen::Matrix<double, 6, 6>& covariance);
+    void visualizeVelocity(const gtsam::Values &values);
 
-  void tracePose(std::map<int, int64_t, std::less<int>> frameid_timestamp_map,
-                 const gtsam::Values& values);
+    void visualizePoseCovariance(
+        const Transformation &T_W_B,
+        const Eigen::Matrix<double, 6, 6> &covariance);
 
-  void traceStates(const gtsam::Values& values);
+    void tracePose(std::map<int, int64_t, std::less<int>> frameid_timestamp_map,
+                   const gtsam::Values &values);
 
-  void traceCovariance(
-      const Eigen::Matrix<double, 6, 6>& C,
-      const int64_t timestamp);
-};
+    void traceStates(const gtsam::Values &values);
+
+    void traceCovariance(
+        const Eigen::Matrix<double, 6, 6> &C,
+        const int64_t timestamp);
+  };
 
 } // end namespace svo
-
