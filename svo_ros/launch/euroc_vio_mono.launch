@@ -17,7 +17,7 @@
 
     <!--Parameters-->
     <rosparam file="$(find svo_ros)/param/vio_mono.yaml" />
-    <param name="runlc" value="true" />
+    <param name="runlc" value="false" />
     
   </node>
 
