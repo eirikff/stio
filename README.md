@@ -1,3 +1,11 @@
+# Semi-direct Thermal-Inertial Odometry (STIO)
+
+This repository consitutes the code for my Master's thesis at NTNU. It is based on [`rpg_svo_pro_open`](https://github.com/uzh-rpg/rpg_svo_pro_open) and extends it to work on thermal data.
+
+Below is the unchanged, original README. 
+
+---
+
 # rpg_svo_pro
 
 This repo includes **SVO Pro** which is the newest version of Semi-direct Visual Odometry (SVO) developed over the past few years at the Robotics and Perception Group (RPG).
