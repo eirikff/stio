@@ -50,5 +50,8 @@ qtcreator-*
 # Vim
 .*.swp
 
+# VSCode
+.vscode/settings.json
+
 # Catkin custom files
 CATKIN_IGNORE
