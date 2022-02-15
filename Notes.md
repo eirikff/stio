@@ -25,4 +25,7 @@ Change from preprocessor ifdefs to option/parameter whether or not histogram equ
 
 ## 16 bit Direct Matching
 
+In `sparse_img_align.cpp` it seems like the only relevant function to change for 16 bit matching is the `evaluateError` function. Go further to the `sparse_img_align_utils::computeResidualsOfFrame` function and there's a `uint8_t` type that gets assign a pixel value. This is probably where we need to change. 
+
+The sparse image align class inherits from the vikit solver class. 
 
