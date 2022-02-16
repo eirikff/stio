@@ -282,6 +282,81 @@ namespace svo
       return true;
     }
 
+    // (stio) 16-bit implementation, overloaded function.
+    bool warpPixelwise(
+        const Frame &cur_frame,
+        const Frame &ref_frame,
+        const FeatureWrapper &ref_ftr,
+        const int level_ref,
+        const int level_cur,
+        const int halfpatch_size,
+        uint16_t *patch)
+    {
+      LOG(FATAL) << "warpPixelwise for 16-bit matching not implemented yet.";
+
+      /* Old implementation, 16 bit not implemented yet.
+      double depth_ref = (ref_frame.pos() - ref_ftr.landmark->pos()).norm();
+      double depth_cur = (cur_frame.pos() - ref_ftr.landmark->pos()).norm();
+
+      // backproject to 3D points in reference frame
+      Eigen::Vector3d xyz_ref;
+      ref_frame.cam()->backProject3(ref_ftr.px, &xyz_ref);
+      xyz_ref = xyz_ref.normalized() * depth_ref;
+
+      // project to current frame and convert to search level
+      Eigen::Vector3d xyz_cur = cur_frame.T_cam_world() * (ref_frame.T_cam_world().inverse()) * xyz_ref;
+      Eigen::Vector2d px_cur;
+      cur_frame.cam()->project3(xyz_cur, &px_cur);
+      Eigen::Vector2d px_cur_search = px_cur / (1 << level_cur);
+
+      // for each pixel in the patch(on search level):
+      // - convert to image level
+      // - backproject to 3D points
+      // - project to ref frame and find pixel value in ref level
+      uint8_t *patch_ptr = patch;
+      const cv::Mat &img_ref = ref_frame.img_pyr_[level_ref];
+      const int stride = img_ref.step.p[0];
+
+      for (int y = -halfpatch_size; y < halfpatch_size; ++y)
+      {
+        for (int x = -halfpatch_size; x < halfpatch_size; ++x, ++patch_ptr)
+        {
+          const Eigen::Vector2d ele_patch(x, y);
+          Eigen::Vector2d ele_search = ele_patch + px_cur_search;
+          Eigen::Vector3d ele_xyz_cur;
+          cur_frame.cam()->backProject3(ele_search * (1 << level_cur), &ele_xyz_cur);
+          ele_xyz_cur = ele_xyz_cur.normalized() * depth_cur;
+          Eigen::Vector3d ele_xyz_ref = ref_frame.T_cam_world() * (cur_frame.T_cam_world().inverse()) * ele_xyz_cur;
+          Eigen::Vector2d ele_ref;
+          ref_frame.cam()->project3(ele_xyz_ref, &ele_ref);
+          ele_ref = ele_ref / (1 << level_ref);
+
+          const int xi = std::floor(ele_ref[0]);
+          const int yi = std::floor(ele_ref[1]);
+          if (xi < 0 || yi < 0 || xi + 1 >= img_ref.cols || yi + 1 >= img_ref.rows)
+          {
+            VLOG(200) << "ref image: col-" << img_ref.cols
+                      << ", row-" << img_ref.rows;
+            VLOG(200) << "xi: " << xi << ", "
+                      << "yi: " << yi;
+            return false;
+          }
+          else
+          {
+            const float subpix_x = ele_ref[0] - xi;
+            const float subpix_y = ele_ref[1] - yi;
+            const float w00 = (1.0f - subpix_x) * (1.0f - subpix_y);
+            const float w01 = (1.0f - subpix_x) * subpix_y;
+            const float w10 = subpix_x * (1.0f - subpix_y);
+            const float w11 = 1.0f - w00 - w01 - w10;
+            const uint8_t *const ptr = img_ref.data + yi * stride + xi;
+            *patch_ptr = static_cast<uint8_t>(w00 * ptr[0] + w01 * ptr[stride] + w10 * ptr[1] + w11 * ptr[stride + 1]);
+          }
+        }
+      }
+      */
+      }
+
     void createPatchNoWarp(
         const cv::Mat &img,
         const Eigen::Vector2i &px,

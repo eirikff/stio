@@ -58,6 +58,17 @@ namespace svo
             const int halfpatch_size,
             uint8_t *patch);
 
+        // (stio) Need a 16 bit version of this function. Overload the function
+        // to reduce code to check which to use.
+        bool warpAffine(
+            const AffineTransformation2 &A_cur_ref,
+            const cv::Mat &img_ref,
+            const Eigen::Ref<Keypoint> &px_ref,
+            const int level_ref,
+            const int level_cur,
+            const int halfpatch_size,
+            uint16_t *patch);
+
         bool warpPixelwise(
             const Frame &cur_frame,
             const Frame &ref_frame,
@@ -67,11 +78,12 @@ namespace svo
             const int halfpatch_size,
             uint8_t *patch);
 
-        // (stio) Need a 16 bit version of this function.
-        bool warpAffine16(
-            const AffineTransformation2 &A_cur_ref,
-            const cv::Mat &img_ref,
-            const Eigen::Ref<Keypoint> &px_ref,
+        // (stio) Need a 16 bit version of this function. Overload the function
+        // to reduce code to check which to use.
+        bool warpPixelwise(
+            const Frame &cur_frame,
+            const Frame &ref_frame,
+            const FeatureWrapper &ref_ftr,
             const int level_ref,
             const int level_cur,
             const int halfpatch_size,
