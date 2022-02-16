@@ -67,6 +67,16 @@ namespace svo
             const int halfpatch_size,
             uint8_t *patch);
 
+        // (stio) Need a 16 bit version of this function.
+        bool warpAffine16(
+            const AffineTransformation2 &A_cur_ref,
+            const cv::Mat &img_ref,
+            const Eigen::Ref<Keypoint> &px_ref,
+            const int level_ref,
+            const int level_cur,
+            const int halfpatch_size,
+            uint16_t *patch);
+
         void createPatchNoWarp(
             const cv::Mat &img,
             const Eigen::Vector2i &px,

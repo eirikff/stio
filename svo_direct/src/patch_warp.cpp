@@ -157,6 +157,59 @@ namespace svo
       return true;
     }
 
+    // (stio) 16 bit implementation.
+    bool warpAffine16(
+        const AffineTransformation2 &A_cur_ref,
+        const cv::Mat &img_ref,
+        const Eigen::Ref<Keypoint> &px_ref,
+        const int level_ref,
+        const int search_level,
+        const int halfpatch_size,
+        uint16_t *patch)
+    {
+      Eigen::Matrix2f A_ref_cur = A_cur_ref.inverse().cast<float>() * (1 << search_level);
+      if (std::isnan(A_ref_cur(0, 0)))
+      {
+        LOG(WARNING) << "Affine warp is NaN, probably camera has no translation";
+        return false;
+      }
+
+      // Perform the warp on a larger patch.
+      uint16_t *patch_ptr = patch;
+      const Eigen::Vector2f px_ref_pyr = px_ref.cast<float>() / (1 << level_ref);
+      // (stio) img_ref.step is in bytes, not pixels. However, these are the 
+      // same for 8 bit images. For 16 bit images though, we need to divide it
+      // by 2 to have the correct stride value later.
+      const int stride = img_ref.step / 2;
+
+      for (int y = -halfpatch_size; y < halfpatch_size; ++y)
+      {
+        for (int x = -halfpatch_size; x < halfpatch_size; ++x, ++patch_ptr)
+        {
+          const Eigen::Vector2f px_patch(x, y);
+          const Eigen::Vector2f px(A_ref_cur * px_patch + px_ref_pyr);
+          const int xi = std::floor(px[0]);
+          const int yi = std::floor(px[1]);
+          if (xi < 0 || yi < 0 || xi + 1 >= img_ref.cols || yi + 1 >= img_ref.rows)
+            return false;
+          else
+          {
+            const float subpix_x = px[0] - xi;
+            const float subpix_y = px[1] - yi;
+            const float w00 = (1.0f - subpix_x) * (1.0f - subpix_y);
+            const float w01 = (1.0f - subpix_x) * subpix_y;
+            const float w10 = subpix_x * (1.0f - subpix_y);
+            const float w11 = 1.0f - w00 - w01 - w10;
+            // (stio) Need to use reinterpret_cast here because img_ref.data is an array of bytes,
+            // but we're interested in the array as an array of pixels of 16 bit.
+            const uint16_t *const ptr = reinterpret_cast<uint16_t *>(img_ref.data) + yi * stride + xi;
+            *patch_ptr = static_cast<uint16_t>(w00 * ptr[0] + w01 * ptr[stride] + w10 * ptr[1] + w11 * ptr[stride + 1]);
+          }
+        }
+      }
+      return true;
+    }
+
     bool warpPixelwise(
         const Frame &cur_frame,
         const Frame &ref_frame,
