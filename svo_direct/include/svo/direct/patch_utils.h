@@ -31,6 +31,21 @@ namespace svo
       }
     }
 
+    // (stio) Overloaded 16-bit implementation.
+    inline void createPatchFromPatchWithBorder(
+        const uint16_t *const patch_with_border,
+        const int patch_size,
+        uint16_t *patch)
+    {
+      uint16_t *patch_ptr = patch;
+      for (int y = 1; y < patch_size + 1; ++y, patch_ptr += patch_size)
+      {
+        const uint16_t *ref_patch_border_ptr = patch_with_border + y * (patch_size + 2) + 1;
+        for (int x = 0; x < patch_size; ++x)
+          patch_ptr[x] = ref_patch_border_ptr[x];
+      }
+    }
+
     inline void patchToMat(
         const uint8_t *const patch_data,
         const size_t patch_width,

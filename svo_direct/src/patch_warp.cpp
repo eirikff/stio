@@ -158,7 +158,7 @@ namespace svo
     }
 
     // (stio) 16 bit implementation.
-    bool warpAffine16(
+    bool warpAffine(
         const AffineTransformation2 &A_cur_ref,
         const cv::Mat &img_ref,
         const Eigen::Ref<Keypoint> &px_ref,
@@ -380,6 +380,30 @@ namespace svo
       }
     }
 
+    // (stio) Overloaded 16-bit implementation.
+    void createPatchNoWarp(
+        const cv::Mat &img,
+        const Eigen::Vector2i &px,
+        const int halfpatch_size,
+        uint16_t *patch)
+    {
+      CHECK_NOTNULL(patch);
+      CHECK(px(0) >= halfpatch_size && px(1) >= halfpatch_size && px(0) < img.cols - halfpatch_size && px(1) < img.rows - halfpatch_size);
+
+      const int patch_size = 2 * halfpatch_size;
+      uint16_t *patch_ptr = patch;
+      const int step = img.step / 2; // (stio) Divide step by 2 to get correct step for 16 bit.
+      for (int y = 0; y < patch_size; ++y)
+      {
+        uint16_t *img_ptr =
+            reinterpret_cast<uint16_t *>(img.data) + (px[1] - halfpatch_size + y) * step + (px[0] - halfpatch_size);
+        for (int x = 0; x < patch_size; ++x, ++patch_ptr, ++img_ptr)
+        {
+          *patch_ptr = *img_ptr;
+        }
+      }
+    }
+
     void createPatchNoWarpInterpolated(
         const cv::Mat &img,
         const Eigen::Ref<Keypoint> &px,
@@ -411,6 +435,47 @@ namespace svo
       {
         uint8_t *img_ptr =
             (uint8_t *)img.data + (v_r - halfpatch_size + y) * step + (u_r - halfpatch_size);
+        for (int x = 0; x < patch_size; ++x, ++patch_ptr, ++img_ptr)
+        {
+          *patch_ptr =
+              wTL * img_ptr[0] + wTR * img_ptr[1] + wBL * img_ptr[step] + wBR * img_ptr[step + 1];
+          ;
+        }
+      }
+    }
+
+    // (stio) Overloaded 16 bit version.
+    void createPatchNoWarpInterpolated(
+        const cv::Mat &img,
+        const Eigen::Ref<Keypoint> &px,
+        const int halfpatch_size,
+        uint16_t *patch)
+    {
+      CHECK_NOTNULL(patch);
+
+      // TODO(cfo): This could be easily implemented using SIMD instructions.
+
+      const int step = img.step / 2;
+      const float u = px(0);
+      const float v = px(1);
+      const int u_r = std::floor(u);
+      const int v_r = std::floor(v);
+      CHECK(u_r >= halfpatch_size && v_r >= halfpatch_size && u_r < img.cols - halfpatch_size && v_r < img.rows - halfpatch_size);
+
+      // compute interpolation weights
+      const float subpix_x = u - u_r;
+      const float subpix_y = v - v_r;
+      const float wTL = (1.0 - subpix_x) * (1.0 - subpix_y);
+      const float wTR = subpix_x * (1.0 - subpix_y);
+      const float wBL = (1.0 - subpix_x) * subpix_y;
+      const float wBR = subpix_x * subpix_y;
+
+      const int patch_size = 2 * halfpatch_size;
+      uint16_t *patch_ptr = patch;
+      for (int y = 0; y < patch_size; ++y)
+      {
+        uint16_t *img_ptr =
+            reinterpret_cast<uint16_t *>(img.data) + (v_r - halfpatch_size + y) * step + (u_r - halfpatch_size);
         for (int x = 0; x < patch_size; ++x, ++patch_ptr, ++img_ptr)
         {
           *patch_ptr =

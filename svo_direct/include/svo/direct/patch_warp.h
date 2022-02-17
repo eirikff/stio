@@ -95,11 +95,25 @@ namespace svo
             const int halfpatch_size,
             uint8_t *patch);
 
+        // (stio) Overloaded 16-bit implementation.
+        void createPatchNoWarp(
+            const cv::Mat &img,
+            const Eigen::Vector2i &px,
+            const int halfpatch_size,
+            uint16_t *patch);
+
         void createPatchNoWarpInterpolated(
             const cv::Mat &img,
             const Eigen::Ref<Keypoint> &px,
             const int halfpatch_size,
             uint8_t *patch);
+
+        // (stio) Overloaded 16-bit implementation.
+        void createPatchNoWarpInterpolated(
+            const cv::Mat &img,
+            const Eigen::Ref<Keypoint> &px,
+            const int halfpatch_size,
+            uint16_t *patch);
 
     } // namespace warp
 } // namespace svo
