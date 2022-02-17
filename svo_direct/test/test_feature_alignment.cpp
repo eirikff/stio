@@ -16,6 +16,12 @@
 #include <opencv2/highgui/highgui.hpp> // imread
 #include <opencv2/imgproc/imgproc.hpp>
 
+#ifdef STIO_USE_16BIT_MATCHING
+using PATCH_TYPE = uint16_t;
+#else
+using PATCH_TYPE = uint8_t;
+#endif
+
 namespace
 {
 
@@ -48,8 +54,8 @@ namespace
 
     // For each feature, test 1D alignment.
     cur_frame = ref_frame;
-    uint8_t ref_patch_with_border[(kPatchSize + 2) * (kPatchSize + 2)] __attribute__((aligned(16)));
-    uint8_t ref_patch[kPatchSize * kPatchSize] __attribute__((aligned(16)));
+    PATCH_TYPE ref_patch_with_border[(kPatchSize + 2) * (kPatchSize + 2)] __attribute__((aligned(16)));
+    PATCH_TYPE ref_patch[kPatchSize * kPatchSize] __attribute__((aligned(16)));
     for (int i = 0; i < ref_frame->px_vec_.cols(); ++i)
     {
       Eigen::Ref<Keypoint> kp_ref = ref_frame->px_vec_.col(i);
