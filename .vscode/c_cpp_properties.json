@@ -24,7 +24,8 @@
                 "${workspaceFolder}/../opengv/include/**"
             ],
             "defines": [
-                "SVO_USE_OPENGV"
+                "SVO_USE_OPENGV",
+                "STIO_USE_HIST_EQ_DETECTION"
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",

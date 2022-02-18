@@ -20,6 +20,8 @@
 #include <svo/direct/feature_detection.h>
 #include <svo/direct/feature_detection_utils.h>
 
+#include <opencv2/opencv.hpp>
+
 namespace svo
 {
 
@@ -282,6 +284,18 @@ namespace svo
         VLOG(3) << "Skip seed initialization. Have already enough features.";
         return;
       }
+
+      // (stio) Create intermediate reference to avoid so many preprocessor conditionals
+#ifdef STIO_USE_HIST_EQ_DETECTION
+      const ImgPyr &pyr = frame->img_pyr_equalized_;
+      std::cout << "[depth_filter_utils::initializeSeeds] Equalized image type: " << pyr[0].type() << std::endl;
+      // cv::namedWindow("equalized");
+      // cv::imshow("equalized", pyr[0]);
+      // cv::waitKey(1);
+#else
+      const ImgPyr &pyr = frame->img_pyr_;
+#endif
+
       if (no_features_in_frame)
       {
         /// TODO remove
@@ -289,7 +303,7 @@ namespace svo
         CHECK_EQ(frame->px_vec_.size(), 0);
 
         feature_detector->detect(
-            frame->img_pyr_, frame->getMask(), max_n_features, frame->px_vec_,
+            pyr, frame->getMask(), max_n_features, frame->px_vec_,
             frame->score_vec_, frame->level_vec_, frame->grad_vec_, frame->type_vec_);
 
         frame->num_features_ = frame->px_vec_.cols();
@@ -315,10 +329,12 @@ namespace svo
       else
       {
         feature_detector->detect(
-            frame->img_pyr_, frame->getMask(), max_n_features, new_px, new_scores,
+            pyr, frame->getMask(), max_n_features, new_px, new_scores,
             new_levels, new_grads, new_types);
         frame_utils::computeNormalizedBearingVectors(new_px, *frame->cam(), &new_f);
       }
+
+      std::cout << "[depth_filter_utils::initializeSeeds] Kp count after detect: " << frame->type_vec_.size() << std::endl;
 
       // Add features to frame.
       const size_t n_old = frame->num_features_;

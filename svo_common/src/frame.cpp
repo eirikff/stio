@@ -20,6 +20,8 @@
 #include <svo/common/point.h>
 #include <svo/common/camera.h>
 
+#include <opencv2/opencv.hpp>
+
 namespace svo
 {
 
@@ -64,6 +66,22 @@ namespace svo
     {
       frame_utils::createImgPyramid(img, n_pyr_levels, img_pyr_);
     }
+    else if (img.type() == CV_16UC1)
+    {
+      // (stio) TESTING ONLY equalize until 16 matching is implemented
+      // this will likely result in bad tracking when the camera recalibrates
+      cv::Mat equalized;
+      frame_utils::equalizeHistogram(img, equalized);
+
+      // (stio) Need different image pyramid creation function for 16 bit
+      // because the original function checks for 8 bit image.
+      // frame_utils::createImgPyramid16(img, n_pyr_levels, img_pyr_);
+      frame_utils::createImgPyramid(equalized, n_pyr_levels, img_pyr_);
+
+      cv::namedWindow("frame init 16");
+      cv::imshow("frame init 16", img_pyr_[0]);
+      cv::waitKey(1);
+    }
     else if (img.type() == CV_8UC3)
     {
       cv::Mat gray_image;
@@ -82,6 +100,17 @@ namespace svo
   {
     is_keyframe_ = true;
     setKeyPoints();
+
+    // (stio) Histogram equalize image and create equalized image pyramid. This is only required
+    // when a new keyframe is created since we only want to use the equalized image to detect
+    // features.
+    cv::Mat equalized;
+    frame_utils::equalizeHistogram(img_pyr_[0], equalized);
+
+    std::size_t n_pyr_levels = img_pyr_.size();
+    frame_utils::createImgPyramid(equalized, n_pyr_levels, img_pyr_equalized_);
+
+    std::cout << "[Frame::setKeyFrame] Created equalized image pyramid" << std::endl;
   }
 
   void Frame::deleteLandmark(const size_t &feature_index)
@@ -430,6 +459,59 @@ namespace svo
         CHECK(s);
       }
       *f_vec = f_vec->array().rowwise() / f_vec->colwise().norm().array();
+    }
+
+    void createImgPyramid16(
+        const cv::Mat &img_level_0,
+        int n_levels,
+        ImgPyr &pyr)
+    {
+      CHECK_EQ(img_level_0.type(), CV_16U);
+      CHECK_GT(img_level_0.rows, 0);
+      CHECK_GT(img_level_0.cols, 0);
+      CHECK_GT(n_levels, 0);
+
+      pyr.resize(n_levels);
+      pyr[0] = img_level_0;
+      for (int i = 1; i < n_levels; ++i)
+      {
+        pyr[i] = cv::Mat(pyr[i - 1].rows / 2, pyr[i - 1].cols / 2, CV_16U);
+        // vk::halfSample(pyr[i - 1], pyr[i]);
+        cv::pyrDown(pyr[i - 1], pyr[i]);
+      }
+    }
+
+    void equalizeHistogram(const cv::Mat &in, cv::Mat &out)
+    {
+      constexpr int intensityMin = 0;
+      constexpr int intensityMax = (1 << 16) - 1;
+      constexpr int histSize = intensityMax - intensityMin + 1;
+      const float range[] = {intensityMin, intensityMax + 1};
+      const float *histRange = {range};
+
+      cv::Mat histogram;
+      cv::calcHist(&in, 1, 0, cv::noArray(), histogram, 1, &histSize, &histRange, true, false);
+
+      // Find clipping range w.r.t minimmum and maximum intensity values (CDF) with atleast N=10000 pixels in bin
+      int cummulativePixels = 10000;
+
+      // Min value
+      int bin = 1; // ignoring 0 bin
+      for (int sum = 0; sum < cummulativePixels; sum += histogram.at<float>(bin), ++bin)
+        ;
+      double min_val = bin - 1;
+
+      // Max value
+      bin = histSize - 1;
+      for (int sum = 0; sum < cummulativePixels; sum += histogram.at<float>(bin), --bin)
+        ;
+      double max_val = bin + 1;
+
+      // Scale and convert to 8-bit
+      // reference: http://answers.opencv.org/question/75510/how-to-make-auto-adjustmentsbrightness-and-contrast-for-image-android-opencv-image-correction/?answer=75797#post-id-75797
+      double alpha = 255.0 / (max_val - min_val);
+      double beta = -1.0 * min_val * alpha;
+      in.convertTo(out, CV_8UC1, alpha, beta);
     }
 
   } // namespace frame_utils
