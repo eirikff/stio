@@ -117,9 +117,6 @@ namespace svo
         int sumB, sumBB, sumAB;
 #ifndef STIO_USE_16BIT_MATCHING
 #ifdef __SSSE3__
-        if (std::is_same<PATCH_TYPE, uint16_t>::value)
-          LOG(FATAL) << "[ZMSSD:computeScore] ZMSSD::PATCH_TYPE = uint16_t which is not handled for SSSE3.";
-
        if (patch_size_ == 8)
         {
           // From PTAM-GPL, Copyright 2008 Isis Innovation Limited
@@ -234,10 +231,7 @@ namespace svo
 #endif  // __SSSE3__
 #endif  // STIO_USE_16BIT_MATCHING
 #ifdef __ARM_NEON__
-         if (std::is_same<PATCH_TYPE, uint16_t>::value)
-          LOG(FATAL) << "[ZMSSD:computeScore] ZMSSD::PATCH_TYPE = uint16_t which is not handled for ARM_NEON.";
-
-            if (patch_size_ == 8)
+        if (patch_size_ == 8)
         {
           uint16x8_t img_x8, tpl_x8;
           uint16x8_t sumBx8 = vdupq_n_u16(0);
