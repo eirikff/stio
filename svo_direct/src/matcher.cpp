@@ -62,20 +62,25 @@ namespace svo
       }
       else
     */
+
+    // (stio) warpAffine and warpPixelwise populates patch_with_border_ member.
     if (options_.use_affine_warp_)
     {
-      if (!warp::warpAffine(A_cur_ref_, ref_frame.img_pyr_[ref_ftr.level], ref_ftr.px,
-                            ref_ftr.level, search_level_, kHalfPatchSize + 1, patch_with_border_))
+      bool result = warp::warpAffine(A_cur_ref_, ref_frame.img_pyr_[ref_ftr.level], ref_ftr.px,
+                            ref_ftr.level, search_level_, kHalfPatchSize + 1, patch_with_border_);
+      if (!result)
         return MatchResult::kFailWarp;
     }
     else
     {
       // pixelwise warp:
       // TODO(zzc): currently using the search level from affine, good enough?
-      if (!warp::warpPixelwise(cur_frame, ref_frame, ref_ftr,
-                               ref_ftr.level, search_level_, kHalfPatchSize + 1, patch_with_border_))
+      bool result = warp::warpPixelwise(cur_frame, ref_frame, ref_ftr,
+                               ref_ftr.level, search_level_, kHalfPatchSize + 1, patch_with_border_);
+      if (!result)
         return MatchResult::kFailWarp;
     }
+    // (stio) This is overload to work with 16 bit patches.
     patch_utils::createPatchFromPatchWithBorder(
         patch_with_border_, kPatchSize, patch_);
 
@@ -88,6 +93,7 @@ namespace svo
     {
       GradientVector dir_cur(A_cur_ref_ * ref_ftr.grad);
       dir_cur.normalize();
+      // (stio) align1D is overload to work with 16 bit patches.
       if (feature_alignment::align1D(
               cur_frame.img_pyr_[search_level_], dir_cur, patch_with_border_,
               patch_, options_.align_max_iter,
@@ -110,6 +116,7 @@ namespace svo
     else
     {
       std::vector<Eigen::Vector2f> *last_fail_steps = nullptr;
+      // (stio) align2D is overload to work with 16 bit patches.
       bool res = feature_alignment::align2D(
           cur_frame.img_pyr_[search_level_], patch_with_border_, patch_,
           options_.align_max_iter,
@@ -312,7 +319,13 @@ namespace svo
       int *zmssd_best)
   {
     // TODO interpolation would probably be a good idea
+#ifdef STIO_USE_16BIT_MATCHING
+    // (stio) Need reinterpret cast to convert to array of uint16_t, and divide step by 2 to get correct step for array of uint16_t.
+    uint16_t *cur_patch_ptr = 
+      reinterpret_cast<uint16_t *>(frame.img_pyr_[patch_level].data) + (pxi[1] - kHalfPatchSize) * frame.img_pyr_[patch_level].step / 2 + (pxi[0] - kHalfPatchSize);
+#else
     uint8_t *cur_patch_ptr = frame.img_pyr_[patch_level].data + (pxi[1] - kHalfPatchSize) * frame.img_pyr_[patch_level].step + (pxi[0] - kHalfPatchSize);
+#endif
     int zmssd = patch_score.computeScore(cur_patch_ptr, frame.img_pyr_[patch_level].step);
 
     if (zmssd < *zmssd_best)

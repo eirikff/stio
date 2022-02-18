@@ -25,4 +25,21 @@ Change from preprocessor ifdefs to option/parameter whether or not histogram equ
 
 ## 16 bit Direct Matching
 
+In `sparse_img_align.cpp` it seems like the only relevant function to change for 16 bit matching is the `evaluateError` function. Go further to the `sparse_img_align_utils::computeResidualsOfFrame` function and there's a `uint8_t` type that gets assign a pixel value. This is probably where we need to change. 
+
+Just changing this to use a `reinterpret_cast` might be all that it is too it.
+
+The sparse image align class inherits from the vikit solver class. 
+
+The feature alignment step is done in the `projectMapInFrame` function in `processFrame`. The actual alignment is hidden many many layers deep in the function, in the `Reprojector::reprojectFrame` -> `reprojector_utils::matchCandidates` -> `reprojector_utils::matchCandidate` -> `Matcher::findMatchDirect`. 
+
+It looks like the relevant functions to change here are the `feature_alignment::align1D` and `::align2D`. However, we also need to change `patch_utils::createPatchFromPatchWithBorder` to create 16 bit patches.
+
+After changing `Matcher::patch_` and `Matcher::patch_with_border_` to `uint16_t`, there are many red squiggly lines. These needs to be fixed and indicate where it is relevant to change. 
+
+### Todo
+
+Make the switch between 8 bit and 16 bit matching safer using asserts or something. Currently, it will just access incorrect memory which is bad.
+
+Maybe all the overloaded functions can be reverted to using templates? So there isn't so much repeating code with only a couple changed types here and there.
 

@@ -33,10 +33,34 @@ namespace svo
             Keypoint *cur_px_estimate,
             double *h_inv = nullptr);
 
+        // (stio) Overloaded 16-bit version.
+        bool align1D(
+            const cv::Mat &cur_img,
+            const Eigen::Ref<GradientVector> &dir, // direction in which the patch is allowed to move
+            uint16_t *ref_patch_with_border,
+            uint16_t *ref_patch,
+            const int n_iter,
+            const bool affine_est_offset,
+            const bool affine_est_gain,
+            Keypoint *cur_px_estimate,
+            double *h_inv = nullptr);
+
         bool align2D(
             const cv::Mat &cur_img,
             uint8_t *ref_patch_with_border,
             uint8_t *ref_patch,
+            const int n_iter,
+            const bool affine_est_offset,
+            const bool affine_est_gain,
+            Keypoint &cur_px_estimate,
+            bool no_simd = false,
+            std::vector<Eigen::Vector2f> *each_step = nullptr);
+
+        // (stio) Overloaded 16-bit version.
+        bool align2D(
+            const cv::Mat &cur_img,
+            uint16_t *ref_patch_with_border,
+            uint16_t *ref_patch,
             const int n_iter,
             const bool affine_est_offset,
             const bool affine_est_gain,

@@ -15,6 +15,7 @@
 #endif
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
+#include <type_traits>  // (stio) To check if PATCH_TYPE is uint16_t which is not handled for ARM.
 #endif
 
 namespace svo
@@ -41,19 +42,23 @@ namespace svo
 #endif
 
     /// Zero Mean Sum of Squared Differences Cost
-    template <int HALF_PATCH_SIZE>
+    // (stio) Add template parameter PATCH_TYPE to facilitate the use of uint16_t without much code repetition.
+    template <int HALF_PATCH_SIZE, typename PATCH_TYPE>
     class ZMSSD
     {
     public:
       static const int patch_size_ = 2 * HALF_PATCH_SIZE;
       static const int patch_area_ = patch_size_ * patch_size_;
       static const int threshold_ = 2000 * patch_area_;
-      uint8_t *ref_patch_;
-      int sumA_, sumAA_;
+      PATCH_TYPE *ref_patch_;
+      long sumA_, sumAA_;  // (stio) Changed from int to long.
 
-      ZMSSD(uint8_t *ref_patch) : ref_patch_(ref_patch)
+      ZMSSD(PATCH_TYPE *ref_patch) : ref_patch_(ref_patch)
       {
 #ifdef __ARM_NEON__
+        if (std::is_same<PATCH_TYPE, uint16_t>::value)
+          LOG(FATAL) << "[ZMSSD:Constructor] ZMSSD::PATCH_TYPE = uint16_t which is not handled for ARM_NEON.";
+
         if (patch_size_ == 0)
         {
           uint16x8_t tpl_x8;
@@ -75,10 +80,10 @@ namespace svo
         else
 #endif
         {
-          uint32_t sumA_uint = 0, sumAA_uint = 0;
+          uint64_t sumA_uint = 0, sumAA_uint = 0;  // (stio) Changed from uint32_t to uint64_t.
           for (int r = 0; r < patch_area_; r++)
           {
-            uint8_t n = ref_patch_[r];
+            PATCH_TYPE n = ref_patch_[r];
             sumA_uint += n;
             sumAA_uint += n * n;
           }
@@ -89,14 +94,14 @@ namespace svo
 
       static int threshold() { return threshold_; }
 
-      int computeScore(uint8_t *cur_patch) const
+      int computeScore(PATCH_TYPE *cur_patch) const
       {
-        uint32_t sumB_uint = 0;
-        uint32_t sumBB_uint = 0;
-        uint32_t sumAB_uint = 0;
+        uint64_t sumB_uint = 0;
+        uint64_t sumBB_uint = 0;
+        uint64_t sumAB_uint = 0;
         for (int r = 0; r < patch_area_; r++)
         {
-          const uint8_t cur_pixel = cur_patch[r];
+          const PATCH_TYPE cur_pixel = cur_patch[r];
           sumB_uint += cur_pixel;
           sumBB_uint += cur_pixel * cur_pixel;
           sumAB_uint += cur_pixel * ref_patch_[r];
@@ -107,11 +112,12 @@ namespace svo
         return sumAA_ - 2 * sumAB + sumBB - (sumA_ * sumA_ - 2 * sumA_ * sumB + sumB * sumB) / patch_area_;
       }
 
-      int computeScore(uint8_t *cur_patch, int stride) const
+      int computeScore(PATCH_TYPE *cur_patch, int stride) const
       {
         int sumB, sumBB, sumAB;
+#ifndef STIO_USE_16BIT_MATCHING
 #ifdef __SSSE3__
-        if (patch_size_ == 8)
+       if (patch_size_ == 8)
         {
           // From PTAM-GPL, Copyright 2008 Isis Innovation Limited
           __m128i xImageAsEightBytes;
@@ -222,9 +228,10 @@ namespace svo
           sumBB = SumXMM_32(xImageSqSums);
         }
         else
-#endif
+#endif  // __SSSE3__
+#endif  // STIO_USE_16BIT_MATCHING
 #ifdef __ARM_NEON__
-            if (patch_size_ == 8)
+        if (patch_size_ == 8)
         {
           uint16x8_t img_x8, tpl_x8;
           uint16x8_t sumBx8 = vdupq_n_u16(0);
@@ -258,15 +265,15 @@ namespace svo
         else
 #endif
         {
-          uint32_t sumB_uint = 0;
-          uint32_t sumBB_uint = 0;
-          uint32_t sumAB_uint = 0;
+          uint64_t sumB_uint = 0;
+          uint64_t sumBB_uint = 0;
+          uint64_t sumAB_uint = 0;
           for (int y = 0, r = 0; y < patch_size_; ++y)
           {
-            uint8_t *cur_patch_ptr = cur_patch + y * stride;
+            PATCH_TYPE *cur_patch_ptr = cur_patch + y * stride;
             for (int x = 0; x < patch_size_; ++x, ++r)
             {
-              const uint8_t cur_px = cur_patch_ptr[x];
+              const PATCH_TYPE cur_px = cur_patch_ptr[x];
               sumB_uint += cur_px;
               sumBB_uint += cur_px * cur_px;
               sumAB_uint += cur_px * ref_patch_[r];
