@@ -91,7 +91,7 @@ namespace svo
     is_keyframe_ = true;
     setKeyPoints();
 
-#ifdef STIO_USE_HIST_EQ_DETECTION
+#ifdef STIO_FULL_16BIT_IMAGES
     // (stio) Histogram equalize image and create equalized image pyramid. This is only required
     // when a new keyframe is created since we only want to use the equalized image to detect
     // features.

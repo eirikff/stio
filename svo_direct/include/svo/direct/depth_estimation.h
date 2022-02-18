@@ -62,7 +62,7 @@ namespace svo
         Keypoint px_ref_;
         Transformation T_cur_ref_;
 
-#ifdef STIO_USE_16BIT_MATCHING
+#ifdef STIO_FULL_16BIT_IMAGES 
         uint16_t ref_patch_[kPatchSize * kPatchSize];
         uint16_t ref_patch_with_border_[(kPatchSize + 2) * (kPatchSize + 2)];
 #else

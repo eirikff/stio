@@ -115,7 +115,7 @@ namespace svo
       int computeScore(PATCH_TYPE *cur_patch, int stride) const
       {
         int sumB, sumBB, sumAB;
-#ifndef STIO_USE_16BIT_MATCHING
+#ifndef STIO_FULL_16BIT_IMAGES
 #ifdef __SSSE3__
        if (patch_size_ == 8)
         {
@@ -229,7 +229,7 @@ namespace svo
         }
         else
 #endif  // __SSSE3__
-#endif  // STIO_USE_16BIT_MATCHING
+#endif  // STIO_FULL_16BIT_IMAGES
 #ifdef __ARM_NEON__
         if (patch_size_ == 8)
         {

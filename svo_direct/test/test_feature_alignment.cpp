@@ -16,7 +16,7 @@
 #include <opencv2/highgui/highgui.hpp> // imread
 #include <opencv2/imgproc/imgproc.hpp>
 
-#ifdef STIO_USE_16BIT_MATCHING
+#ifdef STIO_FULL_16BIT_IMAGES
 using PATCH_TYPE = uint16_t;
 #else
 using PATCH_TYPE = uint8_t;

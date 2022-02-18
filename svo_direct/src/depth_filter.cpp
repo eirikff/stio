@@ -286,7 +286,7 @@ namespace svo
       }
 
       // (stio) Create intermediate reference to avoid so many preprocessor conditionals
-#ifdef STIO_USE_HIST_EQ_DETECTION
+#ifdef STIO_FULL_16BIT_IMAGES
       const ImgPyr &pyr = frame->img_pyr_equalized_;
       std::cout << "[depth_filter_utils::initializeSeeds] Equalized image type: " << pyr[0].type() << std::endl;
       // cv::namedWindow("equalized");

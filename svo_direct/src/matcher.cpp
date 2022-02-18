@@ -319,7 +319,7 @@ namespace svo
       int *zmssd_best)
   {
     // TODO interpolation would probably be a good idea
-#ifdef STIO_USE_16BIT_MATCHING
+#ifdef STIO_FULL_16BIT_IMAGES
     // (stio) Need reinterpret cast to convert to array of uint16_t, and divide step by 2 to get correct step for array of uint16_t.
     uint16_t *cur_patch_ptr = 
       reinterpret_cast<uint16_t *>(frame.img_pyr_[patch_level].data) + (pxi[1] - kHalfPatchSize) * frame.img_pyr_[patch_level].step / 2 + (pxi[0] - kHalfPatchSize);
