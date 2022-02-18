@@ -68,19 +68,9 @@ namespace svo
     }
     else if (img.type() == CV_16UC1)
     {
-      // (stio) TESTING ONLY equalize until 16 matching is implemented
-      // this will likely result in bad tracking when the camera recalibrates
-      cv::Mat equalized;
-      frame_utils::equalizeHistogram(img, equalized);
-
       // (stio) Need different image pyramid creation function for 16 bit
       // because the original function checks for 8 bit image.
-      // frame_utils::createImgPyramid16(img, n_pyr_levels, img_pyr_);
-      frame_utils::createImgPyramid(equalized, n_pyr_levels, img_pyr_);
-
-      cv::namedWindow("frame init 16");
-      cv::imshow("frame init 16", img_pyr_[0]);
-      cv::waitKey(1);
+      frame_utils::createImgPyramid16(img, n_pyr_levels, img_pyr_);
     }
     else if (img.type() == CV_8UC3)
     {
@@ -101,6 +91,7 @@ namespace svo
     is_keyframe_ = true;
     setKeyPoints();
 
+#ifdef STIO_USE_HIST_EQ_DETECTION
     // (stio) Histogram equalize image and create equalized image pyramid. This is only required
     // when a new keyframe is created since we only want to use the equalized image to detect
     // features.
@@ -110,7 +101,8 @@ namespace svo
     std::size_t n_pyr_levels = img_pyr_.size();
     frame_utils::createImgPyramid(equalized, n_pyr_levels, img_pyr_equalized_);
 
-    std::cout << "[Frame::setKeyFrame] Created equalized image pyramid" << std::endl;
+    VLOG(3) << "Created equalized image pyramid";
+#endif
   }
 
   void Frame::deleteLandmark(const size_t &feature_index)
