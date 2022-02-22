@@ -71,6 +71,7 @@ namespace svo
       // (stio) Need different image pyramid creation function for 16 bit
       // because the original function checks for 8 bit image.
       frame_utils::createImgPyramid16(img, n_pyr_levels, img_pyr_);
+      equalized_pyr_valid_ = false;
     }
     else if (img.type() == CV_8UC3)
     {
@@ -100,6 +101,8 @@ namespace svo
 
     std::size_t n_pyr_levels = img_pyr_.size();
     frame_utils::createImgPyramid(equalized, n_pyr_levels, img_pyr_equalized_);
+
+    equalized_pyr_valid_ = true;
 
     VLOG(3) << "Created equalized image pyramid";
 #endif

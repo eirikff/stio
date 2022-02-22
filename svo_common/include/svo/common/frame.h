@@ -46,6 +46,7 @@ namespace svo
     Transformation T_f_w_;  //!< Transform (f)rame from (w)orld.
     ImgPyr img_pyr_;        //!< Image Pyramid.
     ImgPyr img_pyr_equalized_; //!< (stio) Image pyramid of histogram equalized thermal image
+    bool equalized_pyr_valid_; //!< (stio) Control variable to check if the equalized pyramid has been calculated
     cv::Mat original_color_image_;
     // safe without the Eigen aligned allocator, since Position is 24 bytes
     std::vector<std::pair<int, Position>, Eigen::aligned_allocator<
