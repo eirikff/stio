@@ -753,8 +753,16 @@ namespace svo
 
       const int scale = (1 << level);
       const int size = (level == 1) ? 2 : 0;
-      *img_rgb = cv::Mat(frame.img_pyr_[level].size(), CV_8UC3);
-      cv::cvtColor(frame.img_pyr_[level], *img_rgb, cv::COLOR_GRAY2RGB);
+
+      cv::Mat equalized;
+#ifdef STIO_FULL_16BIT_IMAGES
+      frame_utils::equalizeHistogram(frame.img_pyr_[level], equalized);
+#else
+      frame.img_pyr_[level].copyTo(equalized);
+#endif
+      *img_rgb = cv::Mat(equalized.size(), CV_8UC3);
+      cv::cvtColor(equalized, *img_rgb, cv::COLOR_GRAY2RGB);
+
       if (level == 0)
       {
         for (size_t i = 0; i < frame.num_features_; ++i)

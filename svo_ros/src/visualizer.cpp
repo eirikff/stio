@@ -321,8 +321,16 @@ namespace svo
       return;
     VLOG(100) << "Publish feature tracks.";
     const int scale = (1 << level);
-    cv::Mat img_rgb(img_pyr[level].size(), CV_8UC3);
-    cv::cvtColor(img_pyr[level], img_rgb, cv::COLOR_GRAY2RGB);
+    
+    cv::Mat equalized;
+#ifdef STIO_FULL_16BIT_IMAGES
+    frame_utils::equalizeHistogram(img_pyr[level], equalized);
+#else
+    img_pyr[level].copyTo(equalized);
+#endif
+    cv::Mat img_rgb(equalized.size(), CV_8UC3);
+    cv::cvtColor(equalized, img_rgb, cv::COLOR_GRAY2RGB);
+
     for (size_t i = 0; i < matches_ref_cur.size(); ++i)
     {
       size_t i_ref = matches_ref_cur[i].first;
@@ -360,6 +368,14 @@ namespace svo
       {
         frame_utils::createImgPyramid(images[i], img_pub_level_ + 1, img_pyr);
       }
+#ifdef STIO_FULL_16BIT_IMAGES
+      else if (images[i].type() == CV_16UC1) 
+      {
+        cv::Mat equalized;
+        frame_utils::equalizeHistogram(images[i], equalized);
+        frame_utils::createImgPyramid(images[i], img_pub_level_ + 1, img_pyr);
+      }
+#endif
       else if (images[i].type() == CV_8UC3)
       {
         cv::Mat gray_image;
