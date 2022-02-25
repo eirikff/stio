@@ -288,10 +288,6 @@ namespace svo
       // (stio) Create intermediate reference to avoid so many preprocessor conditionals
 #ifdef STIO_FULL_16BIT_IMAGES
       const ImgPyr &pyr = frame->img_pyr_equalized_;
-      std::cout << "[depth_filter_utils::initializeSeeds] Equalized image type: " << pyr[0].type() << std::endl;
-      // cv::namedWindow("equalized");
-      // cv::imshow("equalized", pyr[0]);
-      // cv::waitKey(1);
 #else
       const ImgPyr &pyr = frame->img_pyr_;
 #endif
@@ -333,8 +329,6 @@ namespace svo
             new_levels, new_grads, new_types);
         frame_utils::computeNormalizedBearingVectors(new_px, *frame->cam(), &new_f);
       }
-
-      std::cout << "[depth_filter_utils::initializeSeeds] Kp count after detect: " << frame->type_vec_.size() << std::endl;
 
       // Add features to frame.
       const size_t n_old = frame->num_features_;
