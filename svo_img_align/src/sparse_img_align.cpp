@@ -326,7 +326,12 @@ namespace svo
         RefPatchCache &ref_patch_cache)
     {
       const cv::Mat &ref_img = ref_frame->img_pyr_.at(level);
+#ifdef STIO_FULL_16BIT_IMAGES
+      // (stio) Divide by 2 because .step gives the number of bytes, not pixels.
+      const int stride = ref_img.step / 2;
+#else
       const int stride = ref_img.step; // must be real stride
+#endif
       const FloatType scale = 1.0f / (1 << level);
       const int patch_area = patch_size * patch_size;
       const int border = 1;
@@ -359,9 +364,12 @@ namespace svo
         size_t pixel_counter = 0;
         for (int y = 0; y < patch_size_wb; ++y)
         {
+#ifdef STIO_FULL_16BIT_IMAGES
+          uint16_t *r = reinterpret_cast<uint16_t *>(ref_img.data) + (v_tl_i + y) * stride + u_tl_i;
+#else
           // reference image pointer (openCv stores data in row major format)
-          uint8_t *r =
-              static_cast<uint8_t *>(ref_img.data) + (v_tl_i + y) * stride + u_tl_i;
+          uint8_t *r = static_cast<uint8_t *>(ref_img.data) + (v_tl_i + y) * stride + u_tl_i;
+#endif
           for (int x = 0; x < patch_size_wb; ++x, ++r, ++pixel_counter)
           {
             // precompute interpolated reference patch color
