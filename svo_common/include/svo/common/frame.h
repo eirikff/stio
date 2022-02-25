@@ -115,6 +115,9 @@ namespace svo
     /// Initialize new frame and create image pyramid.
     void initFrame(const cv::Mat &img, size_t n_pyr_levels);
 
+    /// Initialize the histogram equalized image pyramid used for feature detection.
+    void initEqualizedPyramid();
+
     /// Select this frame as keyframe.
     void setKeyframe();
 

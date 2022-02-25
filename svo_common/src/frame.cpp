@@ -87,24 +87,36 @@ namespace svo
     accumulated_w_T_correction_.setIdentity();
   }
 
+  void Frame::initEqualizedPyramid()
+  {
+    // (stio) Histogram equalize image and create equalized image pyramid. This is only required
+    // when a new keyframe is created since we only want to use the equalized image to detect
+    // features.
+    if (!equalized_pyr_valid_)
+    {
+      cv::Mat equalized;
+      frame_utils::equalizeHistogram(img_pyr_[0], equalized);
+
+      std::size_t n_pyr_levels = img_pyr_.size();
+      frame_utils::createImgPyramid(equalized, n_pyr_levels, img_pyr_equalized_);
+
+      equalized_pyr_valid_ = true;
+
+      VLOG(5) << "Created equalized image pyramid";
+    }
+    else
+    {
+      VLOG(5) << "Equalized pyramid already created";
+    }
+  }
+
   void Frame::setKeyframe()
   {
     is_keyframe_ = true;
     setKeyPoints();
 
 #ifdef STIO_FULL_16BIT_IMAGES
-    // (stio) Histogram equalize image and create equalized image pyramid. This is only required
-    // when a new keyframe is created since we only want to use the equalized image to detect
-    // features.
-    cv::Mat equalized;
-    frame_utils::equalizeHistogram(img_pyr_[0], equalized);
-
-    std::size_t n_pyr_levels = img_pyr_.size();
-    frame_utils::createImgPyramid(equalized, n_pyr_levels, img_pyr_equalized_);
-
-    equalized_pyr_valid_ = true;
-
-    VLOG(3) << "Created equalized image pyramid";
+    initEqualizedPyramid();
 #endif
   }
 
