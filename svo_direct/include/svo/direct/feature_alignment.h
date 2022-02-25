@@ -105,6 +105,18 @@ namespace svo
             const Eigen::Vector2i &px_ref_level_0,
             Keypoint &px_cur_level_0);
 
+        // (stio) 16 bit implementation
+        bool alignPyr2D_16(
+            const std::vector<cv::Mat> &img_pyr_ref,
+            const std::vector<cv::Mat> &img_pyr_cur,
+            const int max_level,
+            const int min_level,
+            const std::vector<int> &patch_sizes,
+            const int n_iter,
+            const float min_update_squared,
+            const Eigen::Vector2i &px_ref_level_0,
+            Keypoint &px_cur_level_0);
+
     } // namespace feature_alignment
 } // namespace svo
 

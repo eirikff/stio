@@ -278,7 +278,7 @@ namespace svo
 
       // termination condition
       const float min_update_squared = 0.03 * 0.03;
-      const int cur_step = cur_img.step.p[0];
+      const int cur_step = cur_img.step / 2;
 #if SVO_DISPLAY_ALIGN_1D
       cv::Mat res_patch(kPatchSize, kPatchSize, CV_32FC1);
       cv::Mat cur_patch(kPatchSize, kPatchSize, CV_32FC1);
@@ -647,7 +647,7 @@ namespace svo
 
       // termination condition
       const float min_update_squared = 0.03 * 0.03; // TODO I suppose this depends on the size of the image (ate)
-      const int cur_step = cur_img.step.p[0];
+      const int cur_step = cur_img.step / 2;        // (stio) Need to divide step by 2 to get step in pixels, not in bytes
       // float chi2 = 0;
       Eigen::Vector4f update;
       update.setZero();
@@ -1320,6 +1320,174 @@ namespace svo
           if (update[0] * update[0] + update[1] * update[1] < min_update_squared)
           {
 #if SVO_PYRAMIDAL_VERBOSE
+            std::cout << "level = " << level << ": converged." << std::endl;
+#endif
+            converged = true;
+            break;
+          }
+        } // end iterations
+
+        px_cur_level_0 = Keypoint((u + halfpatch_size + px_ref_offset[0]) * scale,
+                                  (v + halfpatch_size + px_ref_offset[1]) * scale);
+
+        if (!converged && !go_to_next_level)
+          return false; // no need to go to next level when we didn't converge at this one.
+
+      } // end pyramid
+
+      return converged;
+    }
+
+    // (stio) 16-bit implementation
+    bool alignPyr2D_16(
+        const std::vector<cv::Mat> &img_pyr_ref,
+        const std::vector<cv::Mat> &img_pyr_cur,
+        const int max_level,
+        const int min_level,
+        const std::vector<int> &patch_sizes,
+        const int n_iter,
+        const float min_update_squared,
+        const Eigen::Vector2i &px_ref_level_0,
+        Keypoint &px_cur_level_0)
+    {
+#define SVO_PYRAMIDAL_VERBOSE_16 0
+#define SVO_DESCALE_16(x, n) (((x) + (1 << ((n)-1))) >> (n))
+
+#if SVO_PYRAMIDAL_VERBOSE_16
+      std::cout << "--------" << std::endl;
+#endif
+
+      // compute derivative of template and prepare inverse compositional
+      const int max_patch_area = patch_sizes[0] * patch_sizes[0];
+      uint16_t ref_patch[max_patch_area];
+      int32_t ref_patch_dx[max_patch_area];
+      int32_t ref_patch_dy[max_patch_area];
+      bool converged = false;
+
+      for (int level = max_level; level >= min_level; --level)
+      {
+        const int patch_size = patch_sizes[level];
+        CHECK(patch_size % 8 == 0)
+            << ": alignPyr2D is only made for patch sizes multiples of 8!";
+        const int halfpatch_size = patch_size / 2;
+        const int scale = (1 << level);
+        const cv::Mat &img_ref = img_pyr_ref[level];
+        const cv::Mat &img_cur = img_pyr_cur[level];
+        const int width = img_ref.cols;
+        const int height = img_ref.rows;
+        const int step = img_ref.step / 2; // (stio) divide step by 2 to get pixels per row, not bytes
+        const Eigen::Vector2f px_ref_flt = px_ref_level_0.cast<float>() / scale - Eigen::Vector2f(halfpatch_size, halfpatch_size);
+        const Eigen::Vector2i px_ref = px_ref_flt.cast<int>();
+        const Eigen::Vector2f px_ref_offset = px_ref_flt - px_ref.cast<float>();
+
+        if (px_ref[0] < 1 || px_ref[1] < 1 || px_ref[0] >= width - patch_size - 1 || px_ref[1] >= height - patch_size - 1)
+        {
+#if SVO_PYRAMIDAL_VERBOSE_16
+          std::cout << "reference pixel is too close to the border" << std::endl;
+#endif
+          continue;
+        }
+
+        // compute gradient and hessian
+        uint16_t *it_patch = ref_patch;
+        int32_t *it_dx = ref_patch_dx;
+        int32_t *it_dy = ref_patch_dy;
+        Eigen::Matrix2f H;
+        H.setZero();
+        for (int y = 0; y < patch_size; ++y)
+        {
+          uint16_t *it = reinterpret_cast<uint16_t *>(img_ref.data) + (px_ref[1] + y) * step + (px_ref[0]);
+          for (int x = 0; x < patch_size; ++x, ++it, ++it_patch, ++it_dx, ++it_dy)
+          {
+            *it_patch = *it;
+            *it_dx = static_cast<int32_t>(it[1]) - it[-1];
+            *it_dy = static_cast<int32_t>(it[step]) - it[-step]; // divide by 2 missing
+            Eigen::Vector2f J(*it_dx, *it_dy);
+            H += J * J.transpose();
+          }
+        }
+        Eigen::Matrix2f Hinv = H.inverse();
+
+        // Compute pixel location in new image:
+        float u = px_cur_level_0[0] / scale - halfpatch_size - px_ref_offset[0];
+        float v = px_cur_level_0[1] / scale - halfpatch_size - px_ref_offset[1];
+        Eigen::Vector2f update;
+        update.setZero();
+        bool go_to_next_level = false;
+        const int SHIFT_BITS = 15; // TODO(stio): Why is this defined to be 7? Does it need to be changed for 16 bit? Maybe 16 - 1 = 15?
+        converged = false;         // reset at every level
+        for (int iter = 0; iter < n_iter; ++iter)
+        {
+          if (std::isnan(u) || std::isnan(v)) // TODO very rarely this can happen, maybe H is singular? should not be at corner.. check
+          {
+#if SVO_PYRAMIDAL_VERBOSE_16
+            std::cout << "update is NaN" << std::endl;
+#endif
+            return false;
+          }
+
+          go_to_next_level = false;
+          const int u_r = std::floor(u);
+          const int v_r = std::floor(v);
+          if (u_r < 0 || v_r < 0 || u_r >= width - patch_size || v_r >= height - patch_size)
+          {
+#if SVO_PYRAMIDAL_VERBOSE_16
+            std::cout << "current patch is too close to the border "
+                      << "u,v: " << u_r << ", " << v_r
+                      << "\t w,h:" << width << ", " << height
+                      << "\t patch_size = " << patch_size << std::endl;
+#endif
+            go_to_next_level = true;
+            break;
+          }
+
+          // compute interpolation weights
+          const float subpix_x = u - u_r;
+          const float subpix_y = v - v_r;
+          const uint32_t wTL = static_cast<uint32_t>((1.0f - subpix_x) * (1.0f - subpix_y) * (1 << SHIFT_BITS));
+          const uint32_t wTR = static_cast<uint32_t>(subpix_x * (1.0f - subpix_y) * (1 << SHIFT_BITS));
+          const uint32_t wBL = static_cast<uint32_t>((1.0f - subpix_x) * subpix_y * (1 << SHIFT_BITS));
+          const uint32_t wBR = (1 << SHIFT_BITS) - wTL - wTR - wBL;
+
+          // loop through search_patch, interpolate
+          uint16_t *it_ref = ref_patch;
+          Eigen::Vector2f Jres;
+          Jres.setZero();
+
+#ifdef __ARM_NEON__
+#error alignPyr2D_16 is not implemented for ARM NEON.
+#else
+          int32_t *it_ref_dx = ref_patch_dx;
+          int32_t *it_ref_dy = ref_patch_dy;
+
+          for (int y = 0; y < patch_size; ++y)
+          {
+            uint16_t *it = reinterpret_cast<uint16_t *>(img_cur.data) + (v_r + y) * step + (u_r);
+            for (int x = 0; x < patch_size; ++x, ++it, ++it_ref, ++it_ref_dx, ++it_ref_dy)
+            {
+              uint32_t cur = SVO_DESCALE_16(wTL * it[0] + wTR * it[1] + wBL * it[step] + wBR * it[step + 1], SHIFT_BITS);
+              // float cur = wTL*it[0] + wTR*it[1] + wBL*it[step] + wBR*it[step+1];
+              float res = static_cast<float>(cur) - *it_ref;
+              Jres[0] -= res * (*it_ref_dx);
+              Jres[1] -= res * (*it_ref_dy);
+            }
+          }
+#endif
+
+          update = Hinv * Jres * 2.0; // * 2 to compensate because above, we did not compute the derivative correctly
+          u += update[0];
+          v += update[1];
+
+#if SVO_PYRAMIDAL_VERBOSE_16
+          std::cout << "Level: " << level
+                    << "\t Iter: " << iter << ":"
+                    << "\t u=" << u << ", v=" << v
+                    << "\t update = " << update[0] << ", " << update[1] << std::endl;
+#endif
+
+          if (update[0] * update[0] + update[1] * update[1] < min_update_squared)
+          {
+#if SVO_PYRAMIDAL_VERBOSE_16
             std::cout << "level = " << level << ": converged." << std::endl;
 #endif
             converged = true;
