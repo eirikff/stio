@@ -76,11 +76,19 @@ namespace svo
         // Currently not a problem because feature detector returns integer pos.
         Eigen::Vector2i ref_px_level_0 = ref_observation.getPx().cast<int>();
         Keypoint cur_px_level_0 = track.back().getPx();
+#ifdef STIO_FULL_16BIT_IMAGES
+        bool success = feature_alignment::alignPyr2D_16(
+            ref_pyr, cur_pyr,
+            options_.klt_max_level, options_.klt_min_level, options_.klt_patch_sizes,
+            options_.klt_max_iter, options_.klt_min_update_squared,
+            ref_px_level_0, cur_px_level_0);
+#else
         bool success = feature_alignment::alignPyr2D(
             ref_pyr, cur_pyr,
             options_.klt_max_level, options_.klt_min_level, options_.klt_patch_sizes,
             options_.klt_max_iter, options_.klt_min_update_squared,
             ref_px_level_0, cur_px_level_0);
+#endif
         if (success)
         {
           new_keypoints.col(new_keypoints_counter) = cur_px_level_0;
@@ -139,7 +147,15 @@ namespace svo
       FeatureTypes new_types;
       Bearings new_f;
       const size_t max_n_features = detectors_.at(frame_index)->grid_.size();
-      detectors_.at(frame_index)->detect(frame->img_pyr_, frame->getMask(), max_n_features, new_px, new_scores, new_levels, new_grads, new_types);
+
+#ifdef STIO_FULL_16BIT_IMAGES
+      // (stio) Want to detect features on the equalized pyramid.
+      CHECK(frame->equalized_pyr_valid_);
+      const ImgPyr &pyramid = frame->img_pyr_equalized_;
+#else
+      const ImgPyr &pyramid = frame->img_pyr_;
+#endif
+      detectors_.at(frame_index)->detect(pyramid, frame->getMask(), max_n_features, new_px, new_scores, new_levels, new_grads, new_types);
 
       // Compute and normalize all bearing vectors.
       std::vector<bool> success;
