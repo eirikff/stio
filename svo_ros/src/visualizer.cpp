@@ -373,7 +373,7 @@ namespace svo
       {
         cv::Mat equalized;
         frame_utils::equalizeHistogram(images[i], equalized);
-        frame_utils::createImgPyramid(images[i], img_pub_level_ + 1, img_pyr);
+        frame_utils::createImgPyramid(equalized, img_pub_level_ + 1, img_pyr);
       }
 #endif
       else if (images[i].type() == CV_8UC3)
