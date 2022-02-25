@@ -1,0 +1,49 @@
+cameras:
+- camera:
+    distortion:
+      parameters:
+        cols: 1
+        rows: 4
+        data: [-0.125172452973, -0.0158508045529, 0.00552041769855, 0.00188160221577]
+      type: equidistant
+    image_height: 512
+    image_width: 640
+    intrinsics:
+      cols: 1
+      rows: 4
+      data: [440.381678762, 440.34105427, 328.082910449, 257.335140534]
+    label: cam
+    line-delay-nanoseconds: 0
+    type: pinhole
+  T_B_C:
+    cols: 4
+    rows: 4
+    data: [ 0.00368410603583, -0.31582399615, 0.948810640127, 0.132385017016,
+           -0.999990442119, -0.0033974103619, 0.00275195807899, 0.0231335126268,
+            0.00235436470251, -0.948811710014, -0.315833493961, -0.0421824381085,
+            0.0, 0.0, 0.0, 1.0]
+label: active_gold_mine
+
+# NOT UPDATED FOR ACTIVE GOLD MINE DATASET
+imu_params:
+  delay_imu_cam: -0.02414188675155223  # from rovtio launch file: https://github.com/ntnu-arl/rovtio/blob/main/launch/rovtio.launch
+  max_imu_delta_t: 0.01
+  # vn100 datasheet: https://www.vectornav.com/docs/default-source/datasheets/vn-100-datasheet-rev2.pdf?sfvrsn=8e35fd12_10
+  acc_max: 156.96  # from datasheet: 16g = 16 * 9.81 = 156.96 m/s^2
+  omega_max: 34.9066  # from datasheet: 2000 deg/s = 2000 * pi/180 = 34.9066
+  sigma_omega_c: 12.0e-4
+  sigma_acc_c: 8.0e-3
+  sigma_omega_bias_c: 0.03
+  sigma_acc_bias_c: 0.1
+  sigma_integration: 0.0
+  g: 9.79659  # gravity magnitude at Uni of Nevada at 5000ft (https://www.sensorsone.com/local-gravity-calculator/)
+  imu_rate: 200
+
+imu_initialization:
+  velocity: [0.0, 0, 0.0]
+  omega_bias: [0.0, 0, 0.0]
+  acc_bias: [0.0, 0.0, 0.0]
+  velocity_sigma: 2.0
+  omega_bias_sigma: 0.01
+  acc_bias_sigma: 0.1
+
