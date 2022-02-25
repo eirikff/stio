@@ -40,6 +40,8 @@ namespace svo
 
   UpdateResult FrameHandlerMono::processFrameBundle()
   {
+    VLOG(4) << "Stage: " << stageStr();
+
     UpdateResult res = UpdateResult::kFailure;
     if (stage_ == Stage::kTracking)
     {
@@ -65,6 +67,15 @@ namespace svo
 
   UpdateResult FrameHandlerMono::processFirstFrame()
   {
+#ifdef STIO_FULL_16BIT_IMAGES
+    // (stio) Need to calculate equalized pyramid for first frame regardless of if it
+    // is set to be a keyframe
+    for (FramePtr &f : new_frames_->frames_)
+    {
+      f->initEqualizedPyramid();
+    }
+#endif
+
     if (!initializer_->have_depth_prior_)
     {
       initializer_->setDepthPrior(options_.init_map_scale);
