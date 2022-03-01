@@ -13,6 +13,8 @@
 #include <svo/pose_optimizer.h>
 #include <svo/common/seed.h>
 
+#include <numeric>
+
 namespace svo
 {
 
@@ -52,7 +54,9 @@ namespace svo
     std::vector<float> start_errors;
     evaluateErrorImpl(T_imu_world, nullptr, nullptr, &start_errors);
     measurement_sigma_ = scale_estimator_.compute(start_errors);
-    VLOG(5) << "Initial measurement sigma:" << measurement_sigma_;
+    VLOG(5) << "PoseOptimizer: Average initial measurement error: "
+            << std::accumulate(start_errors.begin(), start_errors.end(), 0.0f) / static_cast<float>(start_errors.size())
+            << " and sigma:" << measurement_sigma_;
 
     // Run Gauss Newton optimization.
     optimize(T_imu_world);
@@ -61,6 +65,11 @@ namespace svo
     {
       frame->T_f_w_ = frame->T_cam_imu() * T_imu_world;
     }
+
+    std::vector<float> end_errors;
+    evaluateErrorImpl(T_imu_world, nullptr, nullptr, &end_errors);
+    VLOG(5) << "PoseOptimizer: Average final measurement error: "
+            << std::accumulate(end_errors.begin(), end_errors.end(), 0.0f) / static_cast<float>(end_errors.size());
 
     // Remove Measurements with too large reprojection error
     size_t n_deleted_edges = 0, n_deleted_corners = 0;
