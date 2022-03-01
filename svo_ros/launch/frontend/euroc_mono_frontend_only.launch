@@ -1,0 +1,15 @@
+<launch>
+  <!-- SVO -->
+  <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" launch-prefix="gdb -ex run --args" >
+    <!-- Camera and IMU topics to subscribe to -->
+    <param name="cam0_topic" value="/cam0/image_raw" type="str" />
+    <param name="imu_topic" value="/imu0" type="str" />
+    <param name="calib_file" value="$(find svo_ros)/param/calib/euroc_mono.yaml" type="str" />
+
+    <rosparam file="$(find svo_ros)/param/frontend_euroc_mono.yaml" />
+
+  </node>
+
+  <!-- RVIZ -->
+  <node name="vis" pkg="rviz" type="rviz" args=" -d $(find svo_ros)/rviz_config.rviz" />
+</launch>
