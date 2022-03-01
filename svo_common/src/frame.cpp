@@ -115,7 +115,7 @@ namespace svo
     is_keyframe_ = true;
     setKeyPoints();
 
-#ifndef STIO_USE_16BIT_DETECTION
+#if defined(STIO_USE_16BIT_IMAGE) && !defined(STIO_USE_16BIT_DETECTION)
     initEqualizedPyramid();
 #endif
   }

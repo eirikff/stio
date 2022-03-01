@@ -286,7 +286,8 @@ namespace svo
       }
 
       // (stio) Create intermediate reference to avoid so many preprocessor conditionals
-#ifndef STIO_USE_16BIT_DETECTION
+#if defined(STIO_USE_16BIT_IMAGE) && !defined(STIO_USE_16BIT_DETECTION)
+      CHECK(frame->equalized_pyr_valid_);
       const ImgPyr &pyr = frame->img_pyr_equalized_;
 #else
       const ImgPyr &pyr = frame->img_pyr_;
