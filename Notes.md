@@ -43,3 +43,7 @@ Make the switch between 8 bit and 16 bit matching safer using asserts or somethi
 
 Maybe all the overloaded functions can be reverted to using templates? So there isn't so much repeating code with only a couple changed types here and there.
 
+
+## IMU
+
+Delay is defined as `Camera-IMU delay: delay_imu_cam = cam_timestamp - imu_timestamp [s]` in `estimator_types.hpp:142` -> `struct ImuParameters.
