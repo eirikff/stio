@@ -17,6 +17,7 @@ pipeline_is_stereo: False
 # max_n_kfs: 5
 max_fts: 180
 max_n_kfs: 30
+quality_min_fts: 40
 
 # Map scale when initialized (not used for stereo)
 # Increase if the initial scene depth is larger
@@ -64,12 +65,12 @@ reprojector_affine_est_gain: false
 ########################################
 # Initialization
 # For a higher resolution, increase the value accordingly.
-init_min_disparity: 30
+init_min_disparity: 20
 
 # Feature Detection
 grid_size: 30 # Larger for larger images, for every cell you have max one feature.
 n_pyr_levels: 3 # Increase for larger images (image align max minus one)
-detector_threshold_primary: 10 # Fast detector threshold
+detector_threshold_primary: 20 # Fast detector threshold
 detector_threshold_secondary: 200 # Edgelet detector threshold
 
 # Image Alignment

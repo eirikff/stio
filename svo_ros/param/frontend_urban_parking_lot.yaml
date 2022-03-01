@@ -17,10 +17,11 @@ pipeline_is_stereo: False
 # max_n_kfs: 5
 max_fts: 180
 max_n_kfs: 30
+quality_min_fts: 35
 
 # Map scale when initialized (not used for stereo)
 # Increase if the initial scene depth is larger
-map_scale: 1.0
+map_scale: 5.0
 
 # Initial rotation
 T_world_imuinit/qx: 0
@@ -33,7 +34,7 @@ kfselect_criterion: FORWARD    # alterntive: DOWNLOOKING
 # The following kfselect_* ONLY affects FORWARD
 # If the number of features: >upper, no keyframe; <lower, take keyframe
 kfselect_numkfs_upper_thresh: 120
-kfselect_numkfs_lower_thresh: 70
+kfselect_numkfs_lower_thresh: 60
 # If the current frame is within the following range of any visible keyframes,
 # do not take a new keyframe.
 # You can lower these values for more keyframes
@@ -64,12 +65,12 @@ reprojector_affine_est_gain: false
 ########################################
 # Initialization
 # For a higher resolution, increase the value accordingly.
-init_min_disparity: 30
+init_min_disparity: 20
 
 # Feature Detection
 grid_size: 30 # Larger for larger images, for every cell you have max one feature.
 n_pyr_levels: 3 # Increase for larger images (image align max minus one)
-detector_threshold_primary: 10 # Fast detector threshold
+detector_threshold_primary: 20 # Fast detector threshold
 detector_threshold_secondary: 200 # Edgelet detector threshold
 
 # Image Alignment
@@ -82,7 +83,7 @@ reprojector_max_n_kfs: 5 # Local map size. Larger is computationally more intens
 scan_epi_unit_sphere: False # for wide angle lens, set it to True.
 
 # Pose Optimization
-poseoptim_thresh: 2.0 # Reprojection outlier threshold (px), should be larger for larger images.
+poseoptim_thresh: 3.0 # Reprojection outlier threshold (px), should be larger for larger images.
 poseoptim_using_unit_sphere: False # For wide angle lens, set it to True
 
 # Depth Filter
