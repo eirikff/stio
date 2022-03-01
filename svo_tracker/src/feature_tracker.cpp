@@ -148,7 +148,7 @@ namespace svo
       Bearings new_f;
       const size_t max_n_features = detectors_.at(frame_index)->grid_.size();
 
-#ifdef STIO_USE_16BIT_IMAGE
+#ifndef STIO_USE_16BIT_DETECTION
       // (stio) Want to detect features on the equalized pyramid.
       CHECK(frame->equalized_pyr_valid_);
       const ImgPyr &pyramid = frame->img_pyr_equalized_;
