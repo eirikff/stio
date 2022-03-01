@@ -3,10 +3,10 @@
   <arg name="calib_file" default="$(find svo_ros)/param/calib/vicon_tau2.yaml"/>
 
   <!-- SVO node -->
-  <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" args="--v=0" >
+  <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" >
 
     <!-- Camera topic to subscribe to -->
-    <param name="cam0_topic" value="/thermal_image/8bit_viz" type="str" />
+    <param name="cam0_topic" value="/thermal_image" type="str" />
 	
     <!-- Imu topic to subscribe to -->
     <param name="imu_topic" value="/vn100/imu" type="str" />
