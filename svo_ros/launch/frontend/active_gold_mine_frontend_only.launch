@@ -3,7 +3,7 @@
   <arg name="calib_file" default="$(find svo_ros)/param/calib/$(arg cam_name).yaml"/>
 
   <!-- SVO node -->
-  <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" launch-prefix="gdb --args" >
+  <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" launch-prefix="gdb -ex run --args" >
 
     <!-- Camera topic to subscribe to -->
     <param name="cam0_topic" value="/tau_nodelet/thermal_image" type="str" />
