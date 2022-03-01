@@ -8,6 +8,8 @@
 ##### Basic parameters #####
 ############################
 
+trace_statistics: false
+
 # Pipeline type
 pipeline_is_stereo: False
 
@@ -20,7 +22,7 @@ max_n_kfs: 30
 
 # Map scale when initialized (not used for stereo)
 # Increase if the initial scene depth is larger
-map_scale: 1.0
+map_scale: 3.0
 
 # Initial rotation
 T_world_imuinit/qx: 0
@@ -64,7 +66,7 @@ reprojector_affine_est_gain: false
 ########################################
 # Initialization
 # For a higher resolution, increase the value accordingly.
-init_min_disparity: 15
+init_min_disparity: 20
 
 # Feature Detection
 grid_size: 30 # Larger for larger images, for every cell you have max one feature.
@@ -82,7 +84,7 @@ reprojector_max_n_kfs: 5 # Local map size. Larger is computationally more intens
 scan_epi_unit_sphere: False # for wide angle lens, set it to True.
 
 # Pose Optimization
-poseoptim_thresh: 2.0 # Reprojection outlier threshold (px), should be larger for larger images.
+poseoptim_thresh: 3.0 # Reprojection outlier threshold (px), should be larger for larger images.
 poseoptim_using_unit_sphere: False # For wide angle lens, set it to True
 
 # Depth Filter
