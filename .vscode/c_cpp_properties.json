@@ -25,7 +25,7 @@
             ],
             "defines": [
                 "SVO_USE_OPENGV",
-                "STIO_FULL_16BIT_IMAGES"
+                "STIO_USE_16BIT_IMAGE"
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",

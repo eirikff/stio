@@ -323,7 +323,7 @@ namespace svo
     const int scale = (1 << level);
     
     cv::Mat equalized;
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
     frame_utils::equalizeHistogram(img_pyr[level], equalized);
 #else
     img_pyr[level].copyTo(equalized);
@@ -368,7 +368,7 @@ namespace svo
       {
         frame_utils::createImgPyramid(images[i], img_pub_level_ + 1, img_pyr);
       }
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
       else if (images[i].type() == CV_16UC1) 
       {
         cv::Mat equalized;

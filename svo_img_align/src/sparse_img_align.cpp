@@ -326,7 +326,7 @@ namespace svo
         RefPatchCache &ref_patch_cache)
     {
       const cv::Mat &ref_img = ref_frame->img_pyr_.at(level);
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
       // (stio) Divide by 2 because .step gives the number of bytes, not pixels.
       const int stride = ref_img.step / 2;
 #else
@@ -364,7 +364,7 @@ namespace svo
         size_t pixel_counter = 0;
         for (int y = 0; y < patch_size_wb; ++y)
         {
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
           uint16_t *r = reinterpret_cast<uint16_t *>(ref_img.data) + (v_tl_i + y) * stride + u_tl_i;
 #else
           // reference image pointer (openCv stores data in row major format)
@@ -421,7 +421,7 @@ namespace svo
       // (stio) cur_img.step is in bytes, not pixels. However, these are the 
       // same for 8 bit images. For 16 bit images though, we need to divide it
       // by 2 to have the correct stride value later.
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
       const int stride = cur_img.step / 2;
 #else
       const int stride = cur_img.step;
@@ -481,7 +481,7 @@ namespace svo
           // (stio) This gives the pointer to the start of the y'th row of the patch.
           // By using reinterpret cast we reinterpret the 8 bit data array cur_img.data as an
           // array of 16 bit data array so each index cur_img_ptr[i] will be a 16 bit number.
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
           uint16_t *cur_img_ptr = reinterpret_cast<uint16_t *>(cur_img.data) + (v_tl_i + y) * stride + u_tl_i;
 #else
           uint8_t *cur_img_ptr = static_cast<uint8_t *>(cur_img.data) + (v_tl_i + y) * stride + u_tl_i;

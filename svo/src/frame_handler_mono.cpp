@@ -67,7 +67,7 @@ namespace svo
 
   UpdateResult FrameHandlerMono::processFirstFrame()
   {
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
     // (stio) Need to calculate equalized pyramid for first frame regardless of if it
     // is set to be a keyframe
     for (FramePtr &f : new_frames_->frames_)

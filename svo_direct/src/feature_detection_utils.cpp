@@ -755,7 +755,7 @@ namespace svo
       const int size = (level == 1) ? 2 : 0;
 
       cv::Mat equalized;
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
       frame_utils::equalizeHistogram(frame.img_pyr_[level], equalized);
 #else
       frame.img_pyr_[level].copyTo(equalized);
