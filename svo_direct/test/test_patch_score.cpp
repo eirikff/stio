@@ -10,7 +10,7 @@
 #include <svo/direct/patch_score.h>
 #include <vikit/timer.h>
 
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
 using PATCH_TYPE = uint16_t;
 #else
 using PATCH_TYPE = uint8_t;

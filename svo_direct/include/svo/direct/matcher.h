@@ -36,7 +36,7 @@ namespace svo
         static const int kHalfPatchSize = 4;
         static const int kPatchSize = 8;
 
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
         typedef svo::patch_score::ZMSSD<kHalfPatchSize, uint16_t> PatchScore;
 #else
         typedef svo::patch_score::ZMSSD<kHalfPatchSize, uint8_t> PatchScore;
@@ -75,7 +75,7 @@ namespace svo
             kFailTooFar
         };
 
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
         uint16_t patch_[kPatchSize * kPatchSize];
         uint16_t patch_with_border_[(kPatchSize + 2) * (kPatchSize + 2)];
 #else

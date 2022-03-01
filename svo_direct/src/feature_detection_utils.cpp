@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <numeric>
 
-#include <fast/fast.h>
 #include <vikit/vision.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -20,6 +19,12 @@
 #include <svo/common/logging.h>
 #include <svo/direct/feature_detection_types.h>
 #include <svo/direct/feature_detection.h>
+
+#ifdef STIO_USE_16BIT_DETECTION
+#include <fast16/fast16.h>
+#else
+#include <fast/fast.h>
+#endif
 
 namespace svo
 {
@@ -159,6 +164,19 @@ namespace svo
       for (size_t level = min_level; level <= max_level; ++level)
       {
         const int scale = (1 << level);
+#ifdef STIO_USE_16BIT_DETECTION
+        std::vector<fast16::fast16_xy> fast_corners;
+
+        // divide step by 2 to get the step in pixels, not bytes.
+        fast16::fast16_corner_detect_10(
+            (fast16::fast16_px *)img_pyr[level].data, img_pyr[level].cols,
+            img_pyr[level].rows, img_pyr[level].step / 2, threshold, fast_corners);
+
+        std::vector<int> scores, nm_corners;
+        fast16::fast16_corner_score_10((fast16::fast16_px *)img_pyr[level].data, img_pyr[level].step / 2,
+                                       fast_corners, threshold, scores);
+        fast16::fast16_nonmax_3x3(fast_corners, scores, nm_corners);
+#else
         std::vector<fast::fast_xy> fast_corners;
 #if __SSE2__
         fast::fast_corner_detect_10_sse2(
@@ -177,12 +195,17 @@ namespace svo
         fast::fast_corner_score_10((fast::fast_byte *)img_pyr[level].data, img_pyr[level].step,
                                    fast_corners, threshold, scores);
         fast::fast_nonmax_3x3(fast_corners, scores, nm_corners);
+#endif // STIO_USE_16BIT_DETECTION
 
         const int maxw = img_pyr[level].cols - border;
         const int maxh = img_pyr[level].rows - border;
         for (const int &i : nm_corners)
         {
+#ifdef STIO_USE_16BIT_DETECTION
+          fast16::fast16_xy &xy = fast_corners.at(i);
+#else
           fast::fast_xy &xy = fast_corners.at(i);
+#endif
           if (xy.x < border || xy.y < border || xy.x >= maxw || xy.y >= maxh)
             continue;
           const size_t k = grid.getCellIndex(xy.x, xy.y, scale);
@@ -755,7 +778,7 @@ namespace svo
       const int size = (level == 1) ? 2 : 0;
 
       cv::Mat equalized;
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
       frame_utils::equalizeHistogram(frame.img_pyr_[level], equalized);
 #else
       frame.img_pyr_[level].copyTo(equalized);

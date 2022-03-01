@@ -16,9 +16,14 @@ In `Frame`'s constructor, the `initFrame` function checks if the encoding is mon
 Might be unnecessary to create 8bit pyramid for thermal images, but need a pyramid of histogram equalized images. This needs to be created from one equalized image that is halfsampled into the pyramid levels, so equalize first, then create pyramid. 
 
 
+### 16 bit detection
+
+In `svo::factory::loadDetectorOptions` we can see that only the types `kFastGrad` and `kFast` are ever used, where the former is used when edgelets are also used, and the latter when only corners are used. Only these needs to have 16 bit counter parts.
+
+
 ### Todo 
 
-Make the histogram equalized image what is drawn on and published for the visualization.
+**DONE** Make the histogram equalized image what is drawn on and published for the visualization.
 
 Change from preprocessor ifdefs to option/parameter whether or not histogram equalized detection is used.
 

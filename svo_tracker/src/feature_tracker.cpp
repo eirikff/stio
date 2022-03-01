@@ -76,7 +76,7 @@ namespace svo
         // Currently not a problem because feature detector returns integer pos.
         Eigen::Vector2i ref_px_level_0 = ref_observation.getPx().cast<int>();
         Keypoint cur_px_level_0 = track.back().getPx();
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifdef STIO_USE_16BIT_IMAGE
         bool success = feature_alignment::alignPyr2D_16(
             ref_pyr, cur_pyr,
             options_.klt_max_level, options_.klt_min_level, options_.klt_patch_sizes,
@@ -148,7 +148,7 @@ namespace svo
       Bearings new_f;
       const size_t max_n_features = detectors_.at(frame_index)->grid_.size();
 
-#ifdef STIO_FULL_16BIT_IMAGES
+#ifndef STIO_USE_16BIT_DETECTION
       // (stio) Want to detect features on the equalized pyramid.
       CHECK(frame->equalized_pyr_valid_);
       const ImgPyr &pyramid = frame->img_pyr_equalized_;
