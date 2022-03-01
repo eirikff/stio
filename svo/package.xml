@@ -31,6 +31,7 @@
   <depend>eigen_catkin</depend>
   <depend>minkindr</depend>
   <depend>fast</depend>
+  <depend>fast16</depend>
   <depend>opengv</depend>
   <depend>cv_bridge</depend>
   <depend>glog_catkin</depend>
