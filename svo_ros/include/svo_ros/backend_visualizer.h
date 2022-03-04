@@ -13,7 +13,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <svo/common/transformation.h>
-#include <svo/backend/smart_factors_fwd.h>
+#include <svo/gtsam/smart_factors_fwd.h>
 
 namespace swe
 {

@@ -27,12 +27,6 @@
 #include <vikit/timer.h>
 #include <svo_ros/ceres_backend_factory.h>
 
-#ifdef SVO_USE_GTSAM_BACKEND
-#include <svo_ros/backend_factory.h>
-#include <svo/backend/backend_interface.h>
-#include <svo/backend/backend_optimizer.h>
-#endif
-
 #ifdef SVO_LOOP_CLOSING
 #include <svo/online_loopclosing/loop_closing.h>
 #endif
@@ -93,15 +87,6 @@ namespace svo
         SVO_ERROR_STREAM("Cannot use ceres backend without using imu");
       }
     }
-#ifdef SVO_USE_GTSAM_BACKEND
-    if (vk::param<bool>(pnh_, "use_backend", false))
-    {
-      backend_interface_ = svo::backend_factory::makeBackend(pnh_);
-      ceres_backend_publisher_.reset(new CeresBackendPublisher(svo_->options_.trace_dir, pnh_));
-      svo_->setBundleAdjuster(backend_interface_);
-      backend_interface_->imu_handler_ = imu_handler_;
-    }
-#endif
     if (vk::param<bool>(pnh_, "runlc", false))
     {
 #ifdef SVO_LOOP_CLOSING
@@ -259,21 +244,6 @@ namespace svo
       LOG(FATAL) << "Unknown stage";
       break;
     }
-
-#ifdef SVO_USE_GTSAM_BACKEND
-    if (svo_->stage() == Stage::kTracking && backend_interface_)
-    {
-      if (svo_->getLastFrames()->isKeyframe())
-      {
-        std::lock_guard<std::mutex> estimate_lock(backend_interface_->optimizer_->estimate_mut_);
-        const gtsam::Values &state = backend_interface_->optimizer_->estimate_;
-        ceres_backend_publisher_->visualizeFrames(state);
-        if (backend_interface_->options_.add_imu_factors)
-          ceres_backend_publisher_->visualizeVelocity(state);
-        ceres_backend_publisher_->visualizePoints(state);
-      }
-    }
-#endif
   }
 
   bool SvoInterface::setImuPrior(const int64_t timestamp_nanoseconds)

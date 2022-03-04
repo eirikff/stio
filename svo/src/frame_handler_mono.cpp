@@ -101,9 +101,10 @@ namespace svo
     }
     else if (bundle_adjustment_type_ == BundleAdjustmentType::kGtsam)
     {
-      CHECK(bundle_adjustment_)
-          << "bundle_adjustment_type_ is kGtsam but bundle_adjustment_ is NULL";
-      bundle_adjustment_->bundleAdjustment(initializer_->frames_ref_);
+      // CHECK(bundle_adjustment_)
+      //     << "bundle_adjustment_type_ is kGtsam but bundle_adjustment_ is NULL";
+      // bundle_adjustment_->bundleAdjustment(initializer_->frames_ref_);
+      LOG(FATAL) << "GTSAM Backend not implemented yet.";
     }
     else
     {

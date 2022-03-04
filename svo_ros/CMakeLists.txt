@@ -6,9 +6,8 @@ find_package(rostest REQUIRED)
 catkin_simple()
 find_package(OpenCV REQUIRED)
 
-set(USE_GTSAM false)
 include(SvoSetup)
-if(USE_GLOBAL_MAP OR USE_GTSAM)
+if(USE_GLOBAL_MAP)
   find_package(GTSAMCMakeTools REQUIRED)
   find_package(GTSAM REQUIRED)
   set(GTSAM_LIBRARIES "gtsam")
@@ -35,17 +34,6 @@ set(SOURCES
   src/visualizer.cpp
   src/csv_dataset_reader.cpp
 )
-
-# not used anymore
-if(USE_GTSAM)
-    ADD_DEFINITIONS(-DSVO_USE_GTSAM_BACKEND)
-    list(APPEND HEADERS
-      include/svo_ros/backend_visualizer.h
-      include/svo_ros/backend_factory.h)
-    list(APPEND SOURCES
-      src/backend_visualizer.cpp
-      src/backend_factory.cpp)
-endif()
 
 cs_add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${svo_backend_LIBRARIES} ${GTSAM_LIBRARIES})
