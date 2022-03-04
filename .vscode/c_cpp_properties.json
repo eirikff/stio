@@ -6,6 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/svo/include/**",
                 "${workspaceFolder}/svo_ceres_backend/include/**",
+                "${workspaceFolder}/svo_gtsam_backend/include/**",
                 "${workspaceFolder}/svo_common/include/**",
                 "${workspaceFolder}/svo_direct/include/**",
                 "${workspaceFolder}/svo_global_map/include/**",

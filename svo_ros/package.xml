@@ -40,6 +40,8 @@
   <depend>vikit_common</depend>
   <depend>vikit_ros</depend>
   <depend>visualization_msgs</depend>
+
+  <depend>svo_gtsam_backend</depend>
   
   <export>
     <nodelet plugin="${prefix}/svo_nodelet.xml"/>
