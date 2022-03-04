@@ -1,5 +1,5 @@
 # Backend
-use_ceres_backend: true
+use_backend_type: "ceres"
 ceres_verbose: false
 ceres_marginalize: true
 ceres_num_iterations: 3

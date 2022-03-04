@@ -26,4 +26,4 @@ img_align_use_distortion_jacobian: True
 poseoptim_using_unit_sphere: True
 scan_epi_unit_sphere: True
 
-use_ceres_backend: False
+use_backend_type: "none"

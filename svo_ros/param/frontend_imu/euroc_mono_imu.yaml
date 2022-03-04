@@ -29,4 +29,4 @@ reprojector_affine_est_gain: true
 
 
 # Disable ceres backend
-use_ceres_backend: false
+use_backend_type: "none"

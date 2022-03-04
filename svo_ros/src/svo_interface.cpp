@@ -73,7 +73,8 @@ namespace svo
       svo_->imu_handler_ = imu_handler_;
     }
 
-    if (vk::param<bool>(pnh_, "use_ceres_backend", false))
+    std::string backendType = vk::param<std::string>(pnh_, "use_backend_type", "none");
+    if (backendType == "ceres")
     {
       ceres_backend_interface_ = ceres_backend_factory::makeBackend(pnh_, ncam_);
       if (imu_handler_)
@@ -87,6 +88,11 @@ namespace svo
         SVO_ERROR_STREAM("Cannot use ceres backend without using imu");
       }
     }
+    else if (backendType == "gtsam")
+    {
+      LOG(FATAL) << "GTSAM Backend not implemented yet.";
+    }
+
     if (vk::param<bool>(pnh_, "runlc", false))
     {
 #ifdef SVO_LOOP_CLOSING
@@ -132,7 +138,8 @@ namespace svo
   {
     if (!svo_->isBackendValid())
     {
-      if (vk::param<bool>(pnh_, "use_ceres_backend", false, true))
+      std::string backendType = vk::param<std::string>(pnh_, "use_backend_type", "none", true);
+      if (backendType == "ceres")
       {
         ceres_backend_interface_ =
             ceres_backend_factory::makeBackend(pnh_, ncam_);
@@ -146,6 +153,10 @@ namespace svo
         {
           SVO_ERROR_STREAM("Cannot use ceres backend without using imu");
         }
+      }
+      else if (backendType == "gtsam")
+      {
+        LOG(FATAL) << "GTSAM backend not implemented yet.";
       }
     }
     svo_->addImageBundle(images, timestamp_nanoseconds);

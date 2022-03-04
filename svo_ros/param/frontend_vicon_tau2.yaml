@@ -117,4 +117,4 @@ min_depth_inv: 1.0
 mean_depth_inv: 0.3
 
 # Disable ceres backend
-use_ceres_backend: false
+use_backend_type: "none"

@@ -41,4 +41,4 @@ detector_threshold_primary: 7 # Fast detector threshold
 detector_threshold_secondary: 250 # Edgelet detector threshold
 
 # Disable ceres backend
-use_ceres_backend: false
+use_backend_type: "none"
