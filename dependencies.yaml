@@ -51,3 +51,7 @@ repositories:
     type: git
     url: git@github.com:ethz-asl/numpy_eigen.git
     version: master
+  fast16:
+    type: git
+    url: git@github.com:eirik-ff/fast16.git
+    version: master
