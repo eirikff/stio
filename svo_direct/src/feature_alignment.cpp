@@ -208,6 +208,187 @@ namespace svo
       return converged;
     }
 
+    // (stio) Overloaded 16-bit implementation.
+    bool align1D(
+        const cv::Mat &cur_img,
+        const Eigen::Ref<GradientVector> &dir, // direction in which the patch is allowed to move
+        uint16_t *ref_patch_with_border,
+        uint16_t *ref_patch,
+        const int n_iter,
+        const bool affine_est_offset,
+        const bool affine_est_gain,
+        Keypoint *cur_px_estimate,
+        double *h_inv)
+    {
+      CHECK_NOTNULL(cur_px_estimate);
+
+      constexpr int kHalfPatchSize = 4;
+      constexpr int kPatchSize = 2 * kHalfPatchSize;
+      constexpr int kPatchArea = kPatchSize * kPatchSize;
+      bool converged = false;
+
+      // We optimize feature position and two affine parameters.
+      // Compute derivative of template and prepare inverse compositional.
+      float ref_patch_dv[kPatchArea];
+      Eigen::Matrix3f H = Eigen::Matrix3f::Zero(3, 3);
+
+      // Compute gradient and hessian.
+      constexpr int ref_step = kPatchSize + 2;
+      float *it_dv = ref_patch_dv;
+      for (int y = 0; y < kPatchSize; ++y)
+      {
+        uint16_t *it = ref_patch_with_border + (y + 1) * ref_step + 1;
+        for (int x = 0; x < kPatchSize; ++x, ++it, ++it_dv)
+        {
+          Eigen::Vector3f J;
+          const float dx = static_cast<float>(it[1]) - static_cast<float>(it[-1]);
+          const float dy = static_cast<float>(it[ref_step]) - static_cast<float>(it[-ref_step]);
+          J[0] = 0.5f * (dir(0) * dx + dir(1) * dy);
+
+          // If not using the affine compensation, set the jacobian be zero.
+          // In this way, all the blocks related to affine parameters will be zero.
+          J[1] = affine_est_offset ? 1.0f : 0.0f;
+          J[2] = affine_est_gain ? -1.0f * it[0] : 0.0f;
+
+          *it_dv = J[0];
+          H += J * J.transpose();
+        }
+      }
+      // If not use affine compensation, force update to be zero by
+      // * setting the affine parameter block in H to identity
+      // * setting the residual block to zero (see below)
+      if (!affine_est_offset)
+      {
+        H(1, 1) = 1.0;
+      }
+      if (!affine_est_gain)
+      {
+        H(2, 2) = 1.0;
+      }
+
+      if (h_inv)
+        *h_inv = 1.0 / H(0, 0) * kPatchSize * kPatchSize;
+      Eigen::Matrix3f Hinv = H.inverse();
+      float mean_diff = 0;
+      float alpha = 1.0;
+
+      // Compute pixel location in new image:
+      float u = cur_px_estimate->x();
+      float v = cur_px_estimate->y();
+
+      // termination condition
+      const float min_update_squared = 0.03 * 0.03;
+      const int cur_step = cur_img.step / 2;
+#if SVO_DISPLAY_ALIGN_1D
+      cv::Mat res_patch(kPatchSize, kPatchSize, CV_32FC1);
+      cv::Mat cur_patch(kPatchSize, kPatchSize, CV_32FC1);
+#endif
+      for (int iter = 0; iter < n_iter; ++iter)
+      {
+        int u_r = std::floor(u);
+        int v_r = std::floor(v);
+        if (u_r < kHalfPatchSize || v_r < kHalfPatchSize || u_r >= cur_img.cols - kHalfPatchSize || v_r >= cur_img.rows - kHalfPatchSize)
+          break;
+
+        if (std::isnan(u) || std::isnan(v)) // TODO very rarely this can happen, maybe H is singular? should not be at corner.. check
+          return false;
+
+        // compute interpolation weights
+        float subpix_x = u - u_r;
+        float subpix_y = v - v_r;
+        float wTL = (1.0 - subpix_x) * (1.0 - subpix_y);
+        float wTR = subpix_x * (1.0 - subpix_y);
+        float wBL = (1.0 - subpix_x) * subpix_y;
+        float wBR = subpix_x * subpix_y;
+
+        // loop through search_patch, interpolate
+        uint16_t *it_ref = ref_patch;
+        float *it_ref_dv = ref_patch_dv;
+        float new_chi2 = 0.0;
+        Eigen::Vector3f Jres = Eigen::Vector3f::Zero();
+        for (int y = 0; y < kPatchSize; ++y)
+        {
+          uint16_t *it = reinterpret_cast<uint16_t *>(cur_img.data) +
+                        (v_r + y - kHalfPatchSize) * cur_step + u_r - kHalfPatchSize;
+          for (int x = 0; x < kPatchSize; ++x, ++it, ++it_ref, ++it_ref_dv)
+          {
+            float cur_intensity =
+                wTL * it[0] + wTR * it[1] + wBL * it[cur_step] + wBR * it[cur_step + 1];
+            float res = cur_intensity - alpha * (*it_ref) + mean_diff;
+            Jres[0] -= res * (*it_ref_dv);
+
+            // If affine compensation is used,
+            // set Jres with respect to affine parameters.
+            if (affine_est_offset)
+            {
+              Jres[1] -= res;
+            }
+            if (affine_est_gain)
+            {
+              Jres[2] -= (-1) * res * (*it_ref);
+            }
+            new_chi2 += res * res;
+#if SVO_DISPLAY_ALIGN_1D
+            res_patch.at<float>(y, x) = res;
+            cur_patch.at<float>(y, x) = cur_intensity;
+#endif
+          }
+        }
+        // If not using affine compensation, force update to be zero.
+        if (!affine_est_offset)
+        {
+          Jres[1] = 0.0;
+        }
+        if (!affine_est_gain)
+        {
+          Jres[2] = 0.0;
+        }
+
+        Eigen::Vector3f update = Hinv * Jres;
+        u += update[0] * dir[0];
+        v += update[0] * dir[1];
+        mean_diff += update[1];
+        alpha += update[2];
+
+        VLOG(300) << "It. " << iter << ": \t"
+                  << "\t u=" << u << ", v=" << v
+                  << "\t update = "
+                  << update[0] << ", " << update[1] << ", " << update[2]
+                  << "\t new chi2 = " << new_chi2;
+
+#if SVO_DISPLAY_ALIGN_1D
+        LOG(FATAL) << "[align1D] SVO_DISPLAY_ALIGN_1D requires functions not converted to work with 16-bit yet.";
+
+        cv::Mat res_patch_normalized, cur_patch_normalized, ref_patch_img, ref_patch_normalized;
+        patch_utils::normalizeAndUpsamplePatch(res_patch, 8, &res_patch_normalized);
+        patch_utils::normalizeAndUpsamplePatch(cur_patch, 8, &cur_patch_normalized);
+        patch_utils::patchToMat(ref_patch, kPatchSize, &ref_patch_img);
+        patch_utils::normalizeAndUpsamplePatch(ref_patch_img, 8, &ref_patch_normalized);
+        cv::Mat concatenated;
+        patch_utils::concatenatePatches({ref_patch_normalized,
+                                         cur_patch_normalized,
+                                         res_patch_normalized},
+                                        &concatenated);
+        cv::line(concatenated,
+                 cv::Point2f(concatenated.rows / 2, concatenated.rows / 2),
+                 cv::Point2f(concatenated.rows / 2 + 15 * dir(0), concatenated.rows / 2 + 15 * dir(1)),
+                 cv::Scalar(0, 0, 255), 3);
+        cv::imshow("concatenated", concatenated);
+        cv::waitKey(0);
+#endif
+
+        if (update[0] * update[0] < min_update_squared)
+        {
+          VLOG(300) << "converged.";
+          converged = true;
+          break;
+        }
+      }
+
+      *cur_px_estimate << u, v;
+      return converged;
+    }
+
     //------------------------------------------------------------------------------
     bool align2D(
         const cv::Mat &cur_img,
@@ -389,6 +570,185 @@ namespace svo
 
       cur_px_estimate << u, v;
       (void)no_simd;
+
+      return converged;
+    }
+
+    // (stio) Overloaded 16 bit implementation.
+    bool align2D(
+        const cv::Mat &cur_img,
+        uint16_t *ref_patch_with_border,
+        uint16_t *ref_patch,
+        const int n_iter,
+        const bool affine_est_offset,
+        const bool affine_est_gain,
+        Keypoint &cur_px_estimate,
+        bool no_simd,
+        std::vector<Eigen::Vector2f> *each_step)
+    {
+      if (each_step)
+        each_step->clear();
+
+      const int halfpatch_size_ = 4;
+      const int patch_size_ = 8;
+      const int patch_area_ = 64;
+      bool converged = false;
+
+      // We optimize feature position and two affine parameters.
+      // compute derivative of template and prepare inverse compositional
+      float ref_patch_dx[patch_area_];
+      float ref_patch_dy[patch_area_];
+      Eigen::Matrix4f H;
+      H.setZero();
+
+      // compute gradient and hessian
+      const int ref_step = patch_size_ + 2;
+      float *it_dx = ref_patch_dx;
+      float *it_dy = ref_patch_dy;
+      for (int y = 0; y < patch_size_; ++y)
+      {
+        uint16_t *it = ref_patch_with_border + (y + 1) * ref_step + 1;
+        for (int x = 0; x < patch_size_; ++x, ++it, ++it_dx, ++it_dy)
+        {
+          Eigen::Vector4f J;
+          J[0] = 0.5 * (it[1] - it[-1]);
+          J[1] = 0.5 * (it[ref_step] - it[-ref_step]);
+
+          // If not using the affine compensation, force the jacobian to be zero.
+          J[2] = affine_est_offset ? 1.0 : 0.0;
+          J[3] = affine_est_gain ? -1.0 * it[0] : 0.0;
+
+          *it_dx = J[0];
+          *it_dy = J[1];
+          H += J * J.transpose();
+        }
+      }
+      // If not use affine compensation, force update to be zero by
+      // * setting the affine parameter block in H to identity
+      // * setting the residual block to zero (see below)
+      if (!affine_est_offset)
+      {
+        H(2, 2) = 1.0;
+      }
+      if (!affine_est_gain)
+      {
+        H(3, 3) = 1.0;
+      }
+      Eigen::Matrix4f Hinv = H.inverse();
+      float mean_diff = 0;
+      float alpha = 1.0;
+
+      // Compute pixel location in new image:
+      float u = cur_px_estimate.x();
+      float v = cur_px_estimate.y();
+
+      if (each_step)
+        each_step->push_back(Eigen::Vector2f(u, v));
+
+      // termination condition
+      const float min_update_squared = 0.03 * 0.03; // TODO I suppose this depends on the size of the image (ate)
+      const int cur_step = cur_img.step / 2;        // (stio) Need to divide step by 2 to get step in pixels, not in bytes
+      // float chi2 = 0;
+      Eigen::Vector4f update;
+      update.setZero();
+      for (int iter = 0; iter < n_iter; ++iter)
+      {
+        int u_r = std::floor(u);
+        int v_r = std::floor(v);
+        if (u_r < halfpatch_size_ || v_r < halfpatch_size_ || u_r >= cur_img.cols - halfpatch_size_ || v_r >= cur_img.rows - halfpatch_size_)
+          break;
+
+        if (std::isnan(u) || std::isnan(v)) // TODO very rarely this can happen, maybe H is singular? should not be at corner.. check
+          return false;
+
+        // compute interpolation weights
+        float subpix_x = u - u_r;
+        float subpix_y = v - v_r;
+        float wTL = (1.0 - subpix_x) * (1.0 - subpix_y);
+        float wTR = subpix_x * (1.0 - subpix_y);
+        float wBL = (1.0 - subpix_x) * subpix_y;
+        float wBR = subpix_x * subpix_y;
+
+        // loop through search_patch, interpolate
+        uint16_t *it_ref = ref_patch;
+        float *it_ref_dx = ref_patch_dx;
+        float *it_ref_dy = ref_patch_dy;
+        // float new_chi2 = 0.0;
+        Eigen::Vector4f Jres;
+        Jres.setZero();
+        for (int y = 0; y < patch_size_; ++y)
+        {
+          uint16_t *it = reinterpret_cast<uint16_t *>(cur_img.data) + (v_r + y - halfpatch_size_) * cur_step + u_r - halfpatch_size_;
+          for (int x = 0; x < patch_size_; ++x, ++it, ++it_ref, ++it_ref_dx, ++it_ref_dy)
+          {
+            float search_pixel = wTL * it[0] + wTR * it[1] + wBL * it[cur_step] + wBR * it[cur_step + 1];
+            float res = search_pixel - alpha * (*it_ref) + mean_diff;
+            Jres[0] -= res * (*it_ref_dx);
+            Jres[1] -= res * (*it_ref_dy);
+
+            // If affine compensation is used,
+            // set Jres with respect to affine parameters.
+            if (affine_est_offset)
+            {
+              Jres[2] -= res;
+            }
+
+            if (affine_est_gain)
+            {
+              Jres[3] -= (-1) * res * (*it_ref);
+            }
+            // new_chi2 += res*res;
+          }
+        }
+        // If not use affine compensation, force update to be zero.
+        if (!affine_est_offset)
+        {
+          Jres[2] = 0.0;
+        }
+        if (!affine_est_gain)
+        {
+          Jres[3] = 0.0;
+        }
+        /*
+        if(iter > 0 && new_chi2 > chi2)
+        {
+    #if SUBPIX_VERBOSE
+          cout << "error increased." << endl;
+    #endif
+          u -= update[0];
+          v -= update[1];
+          break;
+        }
+        chi2 = new_chi2;
+    */
+        update = Hinv * Jres;
+        u += update[0];
+        v += update[1];
+        mean_diff += update[2];
+        alpha += update[3];
+
+        if (each_step)
+          each_step->push_back(Eigen::Vector2f(u, v));
+
+#if SUBPIX_VERBOSE
+        cout << "Iter " << iter << ":"
+             << "\t u=" << u << ", v=" << v
+             << "\t update = " << update[0] << ", " << update[1]
+             << "\t new chi2 = " << new_chi2 << endl;
+#endif
+
+        if (update[0] * update[0] + update[1] * update[1] < min_update_squared)
+        {
+#if SUBPIX_VERBOSE
+          cout << "converged." << endl;
+#endif
+          converged = true;
+          break;
+        }
+      }
+
+      (void)no_simd;
+      cur_px_estimate << u, v;
 
       return converged;
     }
@@ -960,6 +1320,174 @@ namespace svo
           if (update[0] * update[0] + update[1] * update[1] < min_update_squared)
           {
 #if SVO_PYRAMIDAL_VERBOSE
+            std::cout << "level = " << level << ": converged." << std::endl;
+#endif
+            converged = true;
+            break;
+          }
+        } // end iterations
+
+        px_cur_level_0 = Keypoint((u + halfpatch_size + px_ref_offset[0]) * scale,
+                                  (v + halfpatch_size + px_ref_offset[1]) * scale);
+
+        if (!converged && !go_to_next_level)
+          return false; // no need to go to next level when we didn't converge at this one.
+
+      } // end pyramid
+
+      return converged;
+    }
+
+    // (stio) 16-bit implementation
+    bool alignPyr2D_16(
+        const std::vector<cv::Mat> &img_pyr_ref,
+        const std::vector<cv::Mat> &img_pyr_cur,
+        const int max_level,
+        const int min_level,
+        const std::vector<int> &patch_sizes,
+        const int n_iter,
+        const float min_update_squared,
+        const Eigen::Vector2i &px_ref_level_0,
+        Keypoint &px_cur_level_0)
+    {
+#define SVO_PYRAMIDAL_VERBOSE_16 0
+#define SVO_DESCALE_16(x, n) (((x) + (1 << ((n)-1))) >> (n))
+
+#if SVO_PYRAMIDAL_VERBOSE_16
+      std::cout << "--------" << std::endl;
+#endif
+
+      // compute derivative of template and prepare inverse compositional
+      const int max_patch_area = patch_sizes[0] * patch_sizes[0];
+      uint16_t ref_patch[max_patch_area];
+      int32_t ref_patch_dx[max_patch_area];
+      int32_t ref_patch_dy[max_patch_area];
+      bool converged = false;
+
+      for (int level = max_level; level >= min_level; --level)
+      {
+        const int patch_size = patch_sizes[level];
+        CHECK(patch_size % 8 == 0)
+            << ": alignPyr2D is only made for patch sizes multiples of 8!";
+        const int halfpatch_size = patch_size / 2;
+        const int scale = (1 << level);
+        const cv::Mat &img_ref = img_pyr_ref[level];
+        const cv::Mat &img_cur = img_pyr_cur[level];
+        const int width = img_ref.cols;
+        const int height = img_ref.rows;
+        const int step = img_ref.step / 2; // (stio) divide step by 2 to get pixels per row, not bytes
+        const Eigen::Vector2f px_ref_flt = px_ref_level_0.cast<float>() / scale - Eigen::Vector2f(halfpatch_size, halfpatch_size);
+        const Eigen::Vector2i px_ref = px_ref_flt.cast<int>();
+        const Eigen::Vector2f px_ref_offset = px_ref_flt - px_ref.cast<float>();
+
+        if (px_ref[0] < 1 || px_ref[1] < 1 || px_ref[0] >= width - patch_size - 1 || px_ref[1] >= height - patch_size - 1)
+        {
+#if SVO_PYRAMIDAL_VERBOSE_16
+          std::cout << "reference pixel is too close to the border" << std::endl;
+#endif
+          continue;
+        }
+
+        // compute gradient and hessian
+        uint16_t *it_patch = ref_patch;
+        int32_t *it_dx = ref_patch_dx;
+        int32_t *it_dy = ref_patch_dy;
+        Eigen::Matrix2f H;
+        H.setZero();
+        for (int y = 0; y < patch_size; ++y)
+        {
+          uint16_t *it = reinterpret_cast<uint16_t *>(img_ref.data) + (px_ref[1] + y) * step + (px_ref[0]);
+          for (int x = 0; x < patch_size; ++x, ++it, ++it_patch, ++it_dx, ++it_dy)
+          {
+            *it_patch = *it;
+            *it_dx = static_cast<int32_t>(it[1]) - it[-1];
+            *it_dy = static_cast<int32_t>(it[step]) - it[-step]; // divide by 2 missing
+            Eigen::Vector2f J(*it_dx, *it_dy);
+            H += J * J.transpose();
+          }
+        }
+        Eigen::Matrix2f Hinv = H.inverse();
+
+        // Compute pixel location in new image:
+        float u = px_cur_level_0[0] / scale - halfpatch_size - px_ref_offset[0];
+        float v = px_cur_level_0[1] / scale - halfpatch_size - px_ref_offset[1];
+        Eigen::Vector2f update;
+        update.setZero();
+        bool go_to_next_level = false;
+        const int SHIFT_BITS = 15; // TODO(stio): Why is this defined to be 7? Does it need to be changed for 16 bit? Maybe 16 - 1 = 15?
+        converged = false;         // reset at every level
+        for (int iter = 0; iter < n_iter; ++iter)
+        {
+          if (std::isnan(u) || std::isnan(v)) // TODO very rarely this can happen, maybe H is singular? should not be at corner.. check
+          {
+#if SVO_PYRAMIDAL_VERBOSE_16
+            std::cout << "update is NaN" << std::endl;
+#endif
+            return false;
+          }
+
+          go_to_next_level = false;
+          const int u_r = std::floor(u);
+          const int v_r = std::floor(v);
+          if (u_r < 0 || v_r < 0 || u_r >= width - patch_size || v_r >= height - patch_size)
+          {
+#if SVO_PYRAMIDAL_VERBOSE_16
+            std::cout << "current patch is too close to the border "
+                      << "u,v: " << u_r << ", " << v_r
+                      << "\t w,h:" << width << ", " << height
+                      << "\t patch_size = " << patch_size << std::endl;
+#endif
+            go_to_next_level = true;
+            break;
+          }
+
+          // compute interpolation weights
+          const float subpix_x = u - u_r;
+          const float subpix_y = v - v_r;
+          const uint32_t wTL = static_cast<uint32_t>((1.0f - subpix_x) * (1.0f - subpix_y) * (1 << SHIFT_BITS));
+          const uint32_t wTR = static_cast<uint32_t>(subpix_x * (1.0f - subpix_y) * (1 << SHIFT_BITS));
+          const uint32_t wBL = static_cast<uint32_t>((1.0f - subpix_x) * subpix_y * (1 << SHIFT_BITS));
+          const uint32_t wBR = (1 << SHIFT_BITS) - wTL - wTR - wBL;
+
+          // loop through search_patch, interpolate
+          uint16_t *it_ref = ref_patch;
+          Eigen::Vector2f Jres;
+          Jres.setZero();
+
+#ifdef __ARM_NEON__
+#error alignPyr2D_16 is not implemented for ARM NEON.
+#else
+          int32_t *it_ref_dx = ref_patch_dx;
+          int32_t *it_ref_dy = ref_patch_dy;
+
+          for (int y = 0; y < patch_size; ++y)
+          {
+            uint16_t *it = reinterpret_cast<uint16_t *>(img_cur.data) + (v_r + y) * step + (u_r);
+            for (int x = 0; x < patch_size; ++x, ++it, ++it_ref, ++it_ref_dx, ++it_ref_dy)
+            {
+              uint32_t cur = SVO_DESCALE_16(wTL * it[0] + wTR * it[1] + wBL * it[step] + wBR * it[step + 1], SHIFT_BITS);
+              // float cur = wTL*it[0] + wTR*it[1] + wBL*it[step] + wBR*it[step+1];
+              float res = static_cast<float>(cur) - *it_ref;
+              Jres[0] -= res * (*it_ref_dx);
+              Jres[1] -= res * (*it_ref_dy);
+            }
+          }
+#endif
+
+          update = Hinv * Jres * 2.0; // * 2 to compensate because above, we did not compute the derivative correctly
+          u += update[0];
+          v += update[1];
+
+#if SVO_PYRAMIDAL_VERBOSE_16
+          std::cout << "Level: " << level
+                    << "\t Iter: " << iter << ":"
+                    << "\t u=" << u << ", v=" << v
+                    << "\t update = " << update[0] << ", " << update[1] << std::endl;
+#endif
+
+          if (update[0] * update[0] + update[1] * update[1] < min_update_squared)
+          {
+#if SVO_PYRAMIDAL_VERBOSE_16
             std::cout << "level = " << level << ": converged." << std::endl;
 #endif
             converged = true;

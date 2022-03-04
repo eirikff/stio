@@ -62,8 +62,13 @@ namespace svo
         Keypoint px_ref_;
         Transformation T_cur_ref_;
 
+#ifdef STIO_USE_16BIT_IMAGE
+        uint16_t ref_patch_[kPatchSize * kPatchSize];
+        uint16_t ref_patch_with_border_[(kPatchSize + 2) * (kPatchSize + 2)];
+#else
         uint8_t ref_patch_[kPatchSize * kPatchSize] __attribute__((aligned(16)));
         uint8_t ref_patch_with_border_[(kPatchSize + 2) * (kPatchSize + 2)] __attribute__((aligned(16)));
+#endif
 
         int level_ = 0;
     };

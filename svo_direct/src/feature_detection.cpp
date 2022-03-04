@@ -9,7 +9,6 @@
 #include <svo/direct/feature_detection.h>
 
 #include <Eigen/Dense>
-#include <fast/fast.h>
 #include <vikit/vision.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>

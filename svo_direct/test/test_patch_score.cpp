@@ -10,13 +10,19 @@
 #include <svo/direct/patch_score.h>
 #include <vikit/timer.h>
 
+#ifdef STIO_USE_16BIT_IMAGE
+using PATCH_TYPE = uint16_t;
+#else
+using PATCH_TYPE = uint8_t;
+#endif
+
 namespace
 {
 
   const int g_halfpatch_size = 4;
   const int g_patch_size = g_halfpatch_size * 2;
 
-  void copyPatch(const cv::Mat &img, int x, int y, uint8_t *patch_data)
+  void copyPatch(const cv::Mat &img, int x, int y, PATCH_TYPE *patch_data)
   {
     cv::Mat patch(g_patch_size, g_patch_size, CV_8U, patch_data);
     img(cv::Range(y - g_halfpatch_size, y + g_halfpatch_size),
@@ -24,11 +30,11 @@ namespace
         .copyTo(patch);
   }
 
-  void copyPatch2(cv::Mat &img, int x, int y, uint8_t *patch_data)
+  void copyPatch2(cv::Mat &img, int x, int y, PATCH_TYPE *patch_data)
   {
     for (int v = 0; v < g_patch_size; ++v, patch_data += g_patch_size)
     {
-      uint8_t *img_ptr = img.data + (y - g_halfpatch_size + v) * img.cols + (x - g_halfpatch_size);
+      PATCH_TYPE *img_ptr = reinterpret_cast<PATCH_TYPE *>(img.data) + (y - g_halfpatch_size + v) * img.cols + (x - g_halfpatch_size);
       for (int u = 0; u < g_patch_size; ++u)
         patch_data[u] = img_ptr[u];
     }
@@ -36,11 +42,11 @@ namespace
   void testZMSSD(cv::Mat &img)
   {
     int x = 300, y = 200;
-    typedef svo::patch_score::ZMSSD<g_halfpatch_size> PatchScore;
+    typedef svo::patch_score::ZMSSD<g_halfpatch_size, PATCH_TYPE> PatchScore;
 
     // create patch
-    uint8_t ref_patch[g_patch_size * g_patch_size] __attribute__((aligned(16)));
-    uint8_t cur_patch[g_patch_size * g_patch_size] __attribute__((aligned(16)));
+    PATCH_TYPE ref_patch[g_patch_size * g_patch_size] __attribute__((aligned(16)));
+    PATCH_TYPE cur_patch[g_patch_size * g_patch_size] __attribute__((aligned(16)));
 
     vk::Timer t;
     for (int i = 0; i < 1000000; ++i)
@@ -71,7 +77,7 @@ namespace
     }
 
     // compute patch score
-    uint8_t *data_ptr = img.data + (y - g_halfpatch_size) * img.cols + (x - g_halfpatch_size);
+    PATCH_TYPE *data_ptr = reinterpret_cast<PATCH_TYPE *>(img.data) + (y - g_halfpatch_size) * img.cols + (x - g_halfpatch_size);
     {
       t.start();
       int c = 10;

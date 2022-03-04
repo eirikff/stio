@@ -33,10 +33,34 @@ namespace svo
             Keypoint *cur_px_estimate,
             double *h_inv = nullptr);
 
+        // (stio) Overloaded 16-bit version.
+        bool align1D(
+            const cv::Mat &cur_img,
+            const Eigen::Ref<GradientVector> &dir, // direction in which the patch is allowed to move
+            uint16_t *ref_patch_with_border,
+            uint16_t *ref_patch,
+            const int n_iter,
+            const bool affine_est_offset,
+            const bool affine_est_gain,
+            Keypoint *cur_px_estimate,
+            double *h_inv = nullptr);
+
         bool align2D(
             const cv::Mat &cur_img,
             uint8_t *ref_patch_with_border,
             uint8_t *ref_patch,
+            const int n_iter,
+            const bool affine_est_offset,
+            const bool affine_est_gain,
+            Keypoint &cur_px_estimate,
+            bool no_simd = false,
+            std::vector<Eigen::Vector2f> *each_step = nullptr);
+
+        // (stio) Overloaded 16-bit version.
+        bool align2D(
+            const cv::Mat &cur_img,
+            uint16_t *ref_patch_with_border,
+            uint16_t *ref_patch,
             const int n_iter,
             const bool affine_est_offset,
             const bool affine_est_gain,
@@ -71,6 +95,18 @@ namespace svo
             std::vector<uint8_t> &status);
 
         bool alignPyr2D(
+            const std::vector<cv::Mat> &img_pyr_ref,
+            const std::vector<cv::Mat> &img_pyr_cur,
+            const int max_level,
+            const int min_level,
+            const std::vector<int> &patch_sizes,
+            const int n_iter,
+            const float min_update_squared,
+            const Eigen::Vector2i &px_ref_level_0,
+            Keypoint &px_cur_level_0);
+
+        // (stio) 16 bit implementation
+        bool alignPyr2D_16(
             const std::vector<cv::Mat> &img_pyr_ref,
             const std::vector<cv::Mat> &img_pyr_cur,
             const int max_level,

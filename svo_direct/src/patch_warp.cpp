@@ -157,6 +157,59 @@ namespace svo
       return true;
     }
 
+    // (stio) 16 bit implementation.
+    bool warpAffine(
+        const AffineTransformation2 &A_cur_ref,
+        const cv::Mat &img_ref,
+        const Eigen::Ref<Keypoint> &px_ref,
+        const int level_ref,
+        const int search_level,
+        const int halfpatch_size,
+        uint16_t *patch)
+    {
+      Eigen::Matrix2f A_ref_cur = A_cur_ref.inverse().cast<float>() * (1 << search_level);
+      if (std::isnan(A_ref_cur(0, 0)))
+      {
+        LOG(WARNING) << "Affine warp is NaN, probably camera has no translation";
+        return false;
+      }
+
+      // Perform the warp on a larger patch.
+      uint16_t *patch_ptr = patch;
+      const Eigen::Vector2f px_ref_pyr = px_ref.cast<float>() / (1 << level_ref);
+      // (stio) img_ref.step is in bytes, not pixels. However, these are the 
+      // same for 8 bit images. For 16 bit images though, we need to divide it
+      // by 2 to have the correct stride value later.
+      const int stride = img_ref.step / 2;
+
+      for (int y = -halfpatch_size; y < halfpatch_size; ++y)
+      {
+        for (int x = -halfpatch_size; x < halfpatch_size; ++x, ++patch_ptr)
+        {
+          const Eigen::Vector2f px_patch(x, y);
+          const Eigen::Vector2f px(A_ref_cur * px_patch + px_ref_pyr);
+          const int xi = std::floor(px[0]);
+          const int yi = std::floor(px[1]);
+          if (xi < 0 || yi < 0 || xi + 1 >= img_ref.cols || yi + 1 >= img_ref.rows)
+            return false;
+          else
+          {
+            const float subpix_x = px[0] - xi;
+            const float subpix_y = px[1] - yi;
+            const float w00 = (1.0f - subpix_x) * (1.0f - subpix_y);
+            const float w01 = (1.0f - subpix_x) * subpix_y;
+            const float w10 = subpix_x * (1.0f - subpix_y);
+            const float w11 = 1.0f - w00 - w01 - w10;
+            // (stio) Need to use reinterpret_cast here because img_ref.data is an array of bytes,
+            // but we're interested in the array as an array of pixels of 16 bit.
+            const uint16_t *const ptr = reinterpret_cast<uint16_t *>(img_ref.data) + yi * stride + xi;
+            *patch_ptr = static_cast<uint16_t>(w00 * ptr[0] + w01 * ptr[stride] + w10 * ptr[1] + w11 * ptr[stride + 1]);
+          }
+        }
+      }
+      return true;
+    }
+
     bool warpPixelwise(
         const Frame &cur_frame,
         const Frame &ref_frame,
@@ -229,6 +282,81 @@ namespace svo
       return true;
     }
 
+    // (stio) 16-bit implementation, overloaded function.
+    bool warpPixelwise(
+        const Frame &cur_frame,
+        const Frame &ref_frame,
+        const FeatureWrapper &ref_ftr,
+        const int level_ref,
+        const int level_cur,
+        const int halfpatch_size,
+        uint16_t *patch)
+    {
+      LOG(FATAL) << "warpPixelwise for 16-bit matching not implemented yet.";
+
+      /* Old implementation, 16 bit not implemented yet.
+      double depth_ref = (ref_frame.pos() - ref_ftr.landmark->pos()).norm();
+      double depth_cur = (cur_frame.pos() - ref_ftr.landmark->pos()).norm();
+
+      // backproject to 3D points in reference frame
+      Eigen::Vector3d xyz_ref;
+      ref_frame.cam()->backProject3(ref_ftr.px, &xyz_ref);
+      xyz_ref = xyz_ref.normalized() * depth_ref;
+
+      // project to current frame and convert to search level
+      Eigen::Vector3d xyz_cur = cur_frame.T_cam_world() * (ref_frame.T_cam_world().inverse()) * xyz_ref;
+      Eigen::Vector2d px_cur;
+      cur_frame.cam()->project3(xyz_cur, &px_cur);
+      Eigen::Vector2d px_cur_search = px_cur / (1 << level_cur);
+
+      // for each pixel in the patch(on search level):
+      // - convert to image level
+      // - backproject to 3D points
+      // - project to ref frame and find pixel value in ref level
+      uint8_t *patch_ptr = patch;
+      const cv::Mat &img_ref = ref_frame.img_pyr_[level_ref];
+      const int stride = img_ref.step.p[0];
+
+      for (int y = -halfpatch_size; y < halfpatch_size; ++y)
+      {
+        for (int x = -halfpatch_size; x < halfpatch_size; ++x, ++patch_ptr)
+        {
+          const Eigen::Vector2d ele_patch(x, y);
+          Eigen::Vector2d ele_search = ele_patch + px_cur_search;
+          Eigen::Vector3d ele_xyz_cur;
+          cur_frame.cam()->backProject3(ele_search * (1 << level_cur), &ele_xyz_cur);
+          ele_xyz_cur = ele_xyz_cur.normalized() * depth_cur;
+          Eigen::Vector3d ele_xyz_ref = ref_frame.T_cam_world() * (cur_frame.T_cam_world().inverse()) * ele_xyz_cur;
+          Eigen::Vector2d ele_ref;
+          ref_frame.cam()->project3(ele_xyz_ref, &ele_ref);
+          ele_ref = ele_ref / (1 << level_ref);
+
+          const int xi = std::floor(ele_ref[0]);
+          const int yi = std::floor(ele_ref[1]);
+          if (xi < 0 || yi < 0 || xi + 1 >= img_ref.cols || yi + 1 >= img_ref.rows)
+          {
+            VLOG(200) << "ref image: col-" << img_ref.cols
+                      << ", row-" << img_ref.rows;
+            VLOG(200) << "xi: " << xi << ", "
+                      << "yi: " << yi;
+            return false;
+          }
+          else
+          {
+            const float subpix_x = ele_ref[0] - xi;
+            const float subpix_y = ele_ref[1] - yi;
+            const float w00 = (1.0f - subpix_x) * (1.0f - subpix_y);
+            const float w01 = (1.0f - subpix_x) * subpix_y;
+            const float w10 = subpix_x * (1.0f - subpix_y);
+            const float w11 = 1.0f - w00 - w01 - w10;
+            const uint8_t *const ptr = img_ref.data + yi * stride + xi;
+            *patch_ptr = static_cast<uint8_t>(w00 * ptr[0] + w01 * ptr[stride] + w10 * ptr[1] + w11 * ptr[stride + 1]);
+          }
+        }
+      }
+      */
+      }
+
     void createPatchNoWarp(
         const cv::Mat &img,
         const Eigen::Vector2i &px,
@@ -245,6 +373,30 @@ namespace svo
       {
         uint8_t *img_ptr =
             (uint8_t *)img.data + (px[1] - halfpatch_size + y) * step + (px[0] - halfpatch_size);
+        for (int x = 0; x < patch_size; ++x, ++patch_ptr, ++img_ptr)
+        {
+          *patch_ptr = *img_ptr;
+        }
+      }
+    }
+
+    // (stio) Overloaded 16-bit implementation.
+    void createPatchNoWarp(
+        const cv::Mat &img,
+        const Eigen::Vector2i &px,
+        const int halfpatch_size,
+        uint16_t *patch)
+    {
+      CHECK_NOTNULL(patch);
+      CHECK(px(0) >= halfpatch_size && px(1) >= halfpatch_size && px(0) < img.cols - halfpatch_size && px(1) < img.rows - halfpatch_size);
+
+      const int patch_size = 2 * halfpatch_size;
+      uint16_t *patch_ptr = patch;
+      const int step = img.step / 2; // (stio) Divide step by 2 to get correct step for 16 bit.
+      for (int y = 0; y < patch_size; ++y)
+      {
+        uint16_t *img_ptr =
+            reinterpret_cast<uint16_t *>(img.data) + (px[1] - halfpatch_size + y) * step + (px[0] - halfpatch_size);
         for (int x = 0; x < patch_size; ++x, ++patch_ptr, ++img_ptr)
         {
           *patch_ptr = *img_ptr;
@@ -283,6 +435,47 @@ namespace svo
       {
         uint8_t *img_ptr =
             (uint8_t *)img.data + (v_r - halfpatch_size + y) * step + (u_r - halfpatch_size);
+        for (int x = 0; x < patch_size; ++x, ++patch_ptr, ++img_ptr)
+        {
+          *patch_ptr =
+              wTL * img_ptr[0] + wTR * img_ptr[1] + wBL * img_ptr[step] + wBR * img_ptr[step + 1];
+          ;
+        }
+      }
+    }
+
+    // (stio) Overloaded 16 bit version.
+    void createPatchNoWarpInterpolated(
+        const cv::Mat &img,
+        const Eigen::Ref<Keypoint> &px,
+        const int halfpatch_size,
+        uint16_t *patch)
+    {
+      CHECK_NOTNULL(patch);
+
+      // TODO(cfo): This could be easily implemented using SIMD instructions.
+
+      const int step = img.step / 2;
+      const float u = px(0);
+      const float v = px(1);
+      const int u_r = std::floor(u);
+      const int v_r = std::floor(v);
+      CHECK(u_r >= halfpatch_size && v_r >= halfpatch_size && u_r < img.cols - halfpatch_size && v_r < img.rows - halfpatch_size);
+
+      // compute interpolation weights
+      const float subpix_x = u - u_r;
+      const float subpix_y = v - v_r;
+      const float wTL = (1.0 - subpix_x) * (1.0 - subpix_y);
+      const float wTR = subpix_x * (1.0 - subpix_y);
+      const float wBL = (1.0 - subpix_x) * subpix_y;
+      const float wBR = subpix_x * subpix_y;
+
+      const int patch_size = 2 * halfpatch_size;
+      uint16_t *patch_ptr = patch;
+      for (int y = 0; y < patch_size; ++y)
+      {
+        uint16_t *img_ptr =
+            reinterpret_cast<uint16_t *>(img.data) + (v_r - halfpatch_size + y) * step + (u_r - halfpatch_size);
         for (int x = 0; x < patch_size; ++x, ++patch_ptr, ++img_ptr)
         {
           *patch_ptr =

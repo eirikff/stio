@@ -631,7 +631,7 @@ namespace svo
       SVO_STOP_TIMER("sparse_img_align");
       SVO_LOG("img_align_n_tracked", img_align_n_tracked);
     }
-    VLOG(40) << "Sparse image alignment tracked " << img_align_n_tracked << " features.";
+    VLOG(4) << "Sparse image alignment tracked " << img_align_n_tracked << " features.";
     return img_align_n_tracked;
   }
 

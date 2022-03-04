@@ -23,7 +23,7 @@ namespace svo
 
     namespace patch_score
     {
-        template <int HALF_PATCH_SIZE>
+        template <int HALF_PATCH_SIZE, typename PATCH_TYPE>
         class ZMSSD;
     }
 
@@ -36,7 +36,11 @@ namespace svo
         static const int kHalfPatchSize = 4;
         static const int kPatchSize = 8;
 
-        typedef svo::patch_score::ZMSSD<kHalfPatchSize> PatchScore;
+#ifdef STIO_USE_16BIT_IMAGE
+        typedef svo::patch_score::ZMSSD<kHalfPatchSize, uint16_t> PatchScore;
+#else
+        typedef svo::patch_score::ZMSSD<kHalfPatchSize, uint8_t> PatchScore;
+#endif
         typedef std::shared_ptr<Matcher> Ptr;
 
         struct Options
@@ -71,8 +75,13 @@ namespace svo
             kFailTooFar
         };
 
+#ifdef STIO_USE_16BIT_IMAGE
+        uint16_t patch_[kPatchSize * kPatchSize];
+        uint16_t patch_with_border_[(kPatchSize + 2) * (kPatchSize + 2)];
+#else
         uint8_t patch_[kPatchSize * kPatchSize] __attribute__((aligned(16)));
         uint8_t patch_with_border_[(kPatchSize + 2) * (kPatchSize + 2)] __attribute__((aligned(16)));
+#endif
         Eigen::Matrix2d A_cur_ref_; //!< affine warp matrix
         Eigen::Vector2d epi_image_; //!< vector from epipolar start to end on the image plane
         double epi_length_pyramid_; //!< length of epipolar line segment in pixels on pyrimid level (only used for epipolar search)

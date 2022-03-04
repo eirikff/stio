@@ -45,6 +45,8 @@ namespace svo
     CameraPtr cam_;         //!< Camera model.
     Transformation T_f_w_;  //!< Transform (f)rame from (w)orld.
     ImgPyr img_pyr_;        //!< Image Pyramid.
+    ImgPyr img_pyr_equalized_; //!< (stio) Image pyramid of histogram equalized thermal image
+    bool equalized_pyr_valid_; //!< (stio) Control variable to check if the equalized pyramid has been calculated
     cv::Mat original_color_image_;
     // safe without the Eigen aligned allocator, since Position is 24 bytes
     std::vector<std::pair<int, Position>, Eigen::aligned_allocator<
@@ -112,6 +114,9 @@ namespace svo
 
     /// Initialize new frame and create image pyramid.
     void initFrame(const cv::Mat &img, size_t n_pyr_levels);
+
+    /// Initialize the histogram equalized image pyramid used for feature detection.
+    void initEqualizedPyramid();
 
     /// Select this frame as keyframe.
     void setKeyframe();
@@ -585,6 +590,17 @@ namespace svo
         const Keypoints &px_vec,
         const Camera &cam,
         Bearings *f_vec);
+
+    /// (stio) The same as frame_utils::createImgPyramid, but works on 16 bit images.
+    void createImgPyramid16(
+        const cv::Mat &img_level_0,
+        int n_levels,
+        ImgPyr &pyr);
+
+    /// (stio) Equalizes a thermal image's histogram to increase contrast and make the image 8 bit deep.
+    void equalizeHistogram(
+        const cv::Mat &in,
+        cv::Mat &out);
 
   } // namespace frame_utils
 } // namespace svo
