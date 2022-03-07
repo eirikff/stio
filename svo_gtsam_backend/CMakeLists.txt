@@ -27,10 +27,12 @@ endif ()
 #############
 set(HEADERS
   include/svo/gtsam_backend_interface.hpp
+  include/svo/gtsam_backend/estimator.hpp
   )
 
 set(SOURCES
   src/gtsam_backend_interface.cpp
+  src/estimator.cpp
   )
 
 cs_add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
