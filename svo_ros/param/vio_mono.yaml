@@ -29,6 +29,10 @@ T_world_imuinit/qx: 0
 T_world_imuinit/qy: 0
 T_world_imuinit/qz: 0
 T_world_imuinit/qw: 1
+# from leica
+T_world_imuinit/tx: 4.659078056543224
+T_world_imuinit/ty: -1.702492097949717
+T_world_imuinit/tz: 0.677316778796989
 
 # Keyframe selection
 kfselect_criterion: FORWARD    # alterntive: DOWNLOOKING
