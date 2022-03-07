@@ -51,4 +51,15 @@ Maybe all the overloaded functions can be reverted to using templates? So there 
 
 ## IMU
 
-Delay is defined as `Camera-IMU delay: delay_imu_cam = cam_timestamp - imu_timestamp [s]` in `estimator_types.hpp:142` -> `struct ImuParameters.
+Delay is defined as `Camera-IMU delay: delay_imu_cam = cam_timestamp - imu_timestamp [s]` in `estimator_types.hpp:142` -> `struct ImuParameters`.
+
+
+
+## GTSAM Backend
+
+Much of the code from the ceres backend can be used as common code. E.g. 
+* the interface code will be very similar and can likely be copied and renamed, and change to match gtsam interface;
+* the motion detector and outlier rejection modules can probably be reused; 
+* the estimator class is probably what needs to re-implemented using gtsam;
+*
+
