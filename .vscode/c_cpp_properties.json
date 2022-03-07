@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/svo/include/**",
+                "${workspaceFolder}/svo_backend_common/include/**",
                 "${workspaceFolder}/svo_ceres_backend/include/**",
                 "${workspaceFolder}/svo_gtsam_backend/include/**",
                 "${workspaceFolder}/svo_common/include/**",

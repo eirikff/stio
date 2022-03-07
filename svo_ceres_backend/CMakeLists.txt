@@ -46,8 +46,6 @@ set(HEADERS
   include/svo/ceres_backend/map_alignment.hpp
   include/svo/ceres_backend/epipolar_error.hpp
   include/svo/ceres_backend/reprojection_error_simple.hpp
-  include/svo/motion_detector.hpp
-  include/svo/outlier_rejection.hpp
   include/svo/ceres_backend_publisher.hpp
   )
 
@@ -68,8 +66,6 @@ set(SOURCES
   src/relative_pose_error.cpp
   src/speed_and_bias_error.cpp
   src/speed_and_bias_parameter_block.cpp
-  src/motion_detector.cpp
-  src/outlier_rejection.cpp
   src/ceres_backend_publisher.cpp
   src/map_alignment.cpp
   )

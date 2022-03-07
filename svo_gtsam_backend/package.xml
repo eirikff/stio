@@ -18,5 +18,6 @@
   <depend>svo_common</depend>
   <depend>svo</depend>
   <depend>pcl_ros</depend>
+  <depend>svo_backend_common</depend>
 
 </package>
