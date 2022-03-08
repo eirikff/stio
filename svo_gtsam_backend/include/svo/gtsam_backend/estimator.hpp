@@ -46,35 +46,35 @@ namespace svo
       gtsam::Pose3 T_C_B; // transformation between camera and body frame
     };
 
+    class Estimator
+    {
+    public: // members
+      // for reinitialization
+      bool is_reinit_ = false;
+      Eigen::Matrix<double, 9, 1> reinit_speed_bias_;
+      Transformation reinit_T_WS_;
+      double reinit_timestamp_start_;
+
+    public: // functions
+      Estimator()
+      {
+      }
+
+      inline void addImuParams(const gtsam_backend::ImuParameters::shared_ptr params)
+      {
+        imu_params_ = params;
+      }
+
+      void addCamParams(const CameraBundlePtr &camera_bundle);
+
+    protected: // members
+      std::shared_ptr<gtsam::ISAM2> isam_;
+      std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;
+      gtsam_backend::ImuParameters::shared_ptr imu_params_;
+      gtsam_backend::CamParameters::shared_ptr cam_params_;
+
+    protected: // functions
+    };
   } // namespace gtsam_backend
 
-  class Estimator
-  {
-  public: // members
-    // for reinitialization
-    bool is_reinit_ = false;
-    Eigen::Matrix<double, 9, 1> reinit_speed_bias_;
-    Transformation reinit_T_WS_;
-    double reinit_timestamp_start_;
-
-  public: // functions
-    Estimator()
-    {
-    }
-
-    inline void addImuParams(const gtsam_backend::ImuParameters::shared_ptr params)
-    {
-      imu_params_ = params;
-    }
-
-    void addCamParams(const CameraBundlePtr &camera_bundle);
-
-  protected: // members
-    std::shared_ptr<gtsam::ISAM2> isam_;
-    std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;
-    gtsam_backend::ImuParameters::shared_ptr imu_params_;
-    gtsam_backend::CamParameters::shared_ptr cam_params_;
-
-  protected: // functions
-  };
 } // namespace svo
