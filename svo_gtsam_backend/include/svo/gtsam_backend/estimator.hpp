@@ -7,7 +7,10 @@
 #include <gtsam/geometry/Point3.h>
 #include <gtsam/navigation/ImuFactor.h>
 #include <gtsam/navigation/CombinedImuFactor.h>
+#include <gtsam/slam/ProjectionFactor.h>
+#include <gtsam/geometry/Cal3DS2.h>
 
+#include <svo/global.h>
 #include <svo/vio_common/backend_types.hpp>
 
 namespace svo
@@ -31,6 +34,18 @@ namespace svo
       double rate = 200;        // imu rate in [Hz]
       double delay_imu_cam = 0; // Camera-IMU delay: delay_imu_cam = cam_timestamp - imu_timestamp [s]
     };
+
+    struct CamParameters
+    {
+      using shared_ptr = std::shared_ptr<CamParameters>;
+
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+      // TODO: this calibration definition assumes radial-tangental distortion. change to also support equidistant/fisheye
+      gtsam::Cal3DS2::shared_ptr K;
+      gtsam::Pose3 T_C_B; // transformation between camera and body frame
+    };
+
   } // namespace gtsam_backend
 
   class Estimator
@@ -52,10 +67,13 @@ namespace svo
       imu_params_ = params;
     }
 
+    void addCamParams(const CameraBundlePtr &camera_bundle);
+
   protected: // members
     std::shared_ptr<gtsam::ISAM2> isam_;
     std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;
     gtsam_backend::ImuParameters::shared_ptr imu_params_;
+    gtsam_backend::CamParameters::shared_ptr cam_params_;
 
   protected: // functions
   };

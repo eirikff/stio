@@ -11,10 +11,10 @@ namespace svo
 {
   GtsamBackendInterface::GtsamBackendInterface(
       const GtsamBackendInterfaceOptions &options,
-      const GtsamBackendOptions &optimizer_options,
+      const GtsamBackendOptions &backend_options,
       const MotionDetectorOptions &motion_detector_options,
       const CameraBundlePtr &camera_bundle)
-      : options_(options), backend_options_(optimizer_options)
+      : options_(options), backend_options_(backend_options)
   {
     type_ = BundleAdjustmentType::kGtsam;
 
@@ -28,6 +28,8 @@ namespace svo
       outlier_rejection_.reset(
           new OutlierRejection(options_.outlier_rejection_px_threshold));
     }
+
+    backend_.addCamParams(camera_bundle);
 
     LOG(FATAL) << "Constructor for GtsamBackendInterface not implemented yet.";
   }
