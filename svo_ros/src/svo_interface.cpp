@@ -27,6 +27,8 @@
 #include <vikit/timer.h>
 #include <svo_ros/ceres_backend_factory.h>
 
+#include <svo/gtsam_backend_interface.hpp>
+
 #ifdef SVO_LOOP_CLOSING
 #include <svo/online_loopclosing/loop_closing.h>
 #endif
@@ -90,6 +92,13 @@ namespace svo
     }
     else if (backendType == "gtsam")
     {
+      GtsamBackendInterfaceOptions options;
+      GtsamBackendOptions backend_options;
+      MotionDetectorOptions motion_detection_options;
+
+      gtsam_backend_interface_ = std::make_shared<GtsamBackendInterface>(
+          options, backend_options, motion_detection_options, ncam_);
+
       LOG(FATAL) << "GTSAM Backend not implemented yet.";
     }
 

@@ -22,6 +22,8 @@ namespace svo
   class CeresBackendInterface;
   class CeresBackendPublisher;
 
+  class GtsamBackendInterface;
+
   enum class PipelineType
   {
     kMono,
@@ -49,6 +51,8 @@ namespace svo
     std::shared_ptr<BackendInterface> backend_interface_;
     std::shared_ptr<CeresBackendInterface> ceres_backend_interface_;
     std::shared_ptr<CeresBackendPublisher> ceres_backend_publisher_;
+
+    std::shared_ptr<GtsamBackendInterface> gtsam_backend_interface_;
 
     CameraBundlePtr ncam_;
 
