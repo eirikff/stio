@@ -43,4 +43,4 @@ ENDIF()
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops -ffast-math -fno-finite-math-only")
 
-#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wno-error=uninitialized")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wno-error=uninitialized")
