@@ -4,6 +4,7 @@
 
   <!-- SVO node -->
   <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" args="--v=0" >
+    <env name="GLOG_logtostderr" value="1" />
 
     <!-- Camera topic to subscribe to -->
     <param name="cam0_topic" value="/cam0/image_raw" type="str" />
