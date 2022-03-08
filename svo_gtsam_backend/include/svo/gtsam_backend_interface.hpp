@@ -67,7 +67,7 @@ namespace svo
 
   public: // functions
     GtsamBackendInterface(const GtsamBackendInterfaceOptions &options,
-                          const GtsamBackendOptions &optimizer_options,
+                          const GtsamBackendOptions &backend_options,
                           const MotionDetectorOptions &motion_detector_options,
                           const CameraBundlePtr &camera_bundle);
 
@@ -168,6 +168,16 @@ namespace svo
     inline void getLastState(ViNodeState *state) const override
     {
       *state = last_state_;
+    }
+
+    inline void setPerformanceMonitor(const std::string & /* trace_dir */) override
+    {
+      LOG(ERROR) << "GtsamBackendInterface::setPerformanceMonitor is not implemented.";
+    }
+
+    inline void startTimer(BundleId /* bundle_id */) override
+    {
+      LOG(ERROR) << "GtsamBackendInterface::startTimer is not implemented.";
     }
 
   protected: // members
