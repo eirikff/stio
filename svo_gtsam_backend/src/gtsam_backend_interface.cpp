@@ -14,7 +14,7 @@ namespace svo
       const GtsamBackendOptions &optimizer_options,
       const MotionDetectorOptions &motion_detector_options,
       const CameraBundlePtr &camera_bundle)
-      : options_(options), optimizer_options_(optimizer_options)
+      : options_(options), backend_options_(optimizer_options)
   {
     type_ = BundleAdjustmentType::kGtsam;
 
@@ -80,8 +80,21 @@ namespace svo
   {
     imu_handler_ = imu_handler;
 
-    // TODO: get paraeters from imu_handler and add them to the backend.
-    // backend_.addImu(imu_parameters);
+    const ImuCalibration &calib = imu_handler_->imu_calib_;
+    // TODO: which direction should gravity_magnitude be? + or - coeff?
+    auto p = std::make_shared<gtsam_backend::ImuParameters>(gtsam::Vector3(0, 0, calib.gravity_magnitude));
+    p->accelerometerCovariance = gtsam::I_3x3 * calib.acc_noise_density * calib.acc_noise_density;
+    p->gyroscopeCovariance = gtsam::I_3x3 * calib.gyro_noise_density * calib.gyro_noise_density;
+    p->biasAccCovariance = gtsam::I_3x3 * calib.acc_bias_random_walk_sigma * calib.acc_bias_random_walk_sigma;
+    p->biasOmegaCovariance = gtsam::I_3x3 * calib.gyro_bias_random_walk_sigma * calib.gyro_bias_random_walk_sigma;
+    p->integrationCovariance = gtsam::I_3x3 * options_.preintegration_sigma * options_.preintegration_sigma;
+    p->biasAccOmegaInt = gtsam::I_6x6 * options_.bias_preintegration_sigma * options_.bias_preintegration_sigma;
+    p->accel_max = calib.saturation_accel_max;
+    p->omega_max = calib.saturation_omega_max;
+    p->rate = calib.imu_rate;
+    p->delay_imu_cam = calib.delay_imu_cam;
+
+    backend_.addImuParams(p);
   }
 
   void GtsamBackendInterface::getLatestSpeedBiasPose(Eigen::Matrix<double, 9, 1> *speed_bias,

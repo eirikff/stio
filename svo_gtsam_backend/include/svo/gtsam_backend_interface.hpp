@@ -44,6 +44,12 @@ namespace svo
     /// might increase this threshold. We made the experice that with GoPro
     /// cameras, we had to increase this threshold.
     double outlier_rejection_px_threshold = 2.0;
+
+    // TODO: what does these sigma parameters *actually* mean?
+    /// Sigma for the uncertainty in the integration.
+    double preintegration_sigma = 1e-4;
+    /// Sigma for the bias used for pre-integration.
+    double bias_preintegration_sigma = 1e-2;
   };
 
   struct GtsamBackendOptions
@@ -57,7 +63,7 @@ namespace svo
     using Ptr = std::shared_ptr<GtsamBackendInterface>;
 
     GtsamBackendInterfaceOptions options_;
-    GtsamBackendOptions optimizer_options_;
+    GtsamBackendOptions backend_options_;
 
   public: // functions
     GtsamBackendInterface(const GtsamBackendInterfaceOptions &options,
@@ -126,6 +132,13 @@ namespace svo
                                 Transformation *T_WS,
                                 double *timestamp) const override;
 
+    /**
+     * @brief Set the start values to use when reinitializing the backend.
+     *
+     * @param sb Speed and biases
+     * @param Tws Transform world imu
+     * @param timestamp Timestamp
+     */
     void setReinitStartValues(const Eigen::Matrix<double, 9, 1> &sb,
                               const Transformation &Tws,
                               const double timestamp) override;
