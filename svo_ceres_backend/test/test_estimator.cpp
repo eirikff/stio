@@ -131,7 +131,7 @@ TEST(okvisTestSuite, Estimator)
         extrinsics_estimation_parameters_vec(2, extrinsics_estimation_parameters);
 
     // create an Estimator
-    svo::Estimator estimator;
+    svo::ceres_backend::Estimator estimator;
 
     // add sensors
     estimator.addCameraBundle(extrinsics_estimation_parameters_vec, camera_rig);

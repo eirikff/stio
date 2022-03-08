@@ -47,70 +47,73 @@
 /// \brief svo Main namespace of this package.
 namespace svo
 {
-
-  // Add an observation to a landmark.
-  inline ceres::ResidualBlockId Estimator::addObservation(const FramePtr &frame,
-                                                          const size_t keypoint_idx)
+  namespace ceres_backend
   {
-    const BackendId nframe_id = createNFrameId(frame->bundleId());
-    DEBUG_CHECK_GE(frame->level_vec_(keypoint_idx), 0);
-    const int cam_idx = frame->getNFrameIndex();
-    // get Landmark ID.
-    const BackendId landmark_backend_id = createLandmarkId(
-        frame->track_id_vec_[keypoint_idx]);
-    DEBUG_CHECK(isLandmarkAdded(landmark_backend_id)) << "landmark not added";
 
-    KeypointIdentifier kid(frame, keypoint_idx);
-    // check for double observations
-    DEBUG_CHECK(landmarks_map_.at(landmark_backend_id).observations.find(kid) == landmarks_map_.at(landmark_backend_id).observations.end())
-        << "Trying to add the same landmark for the second time";
-
-    // get the keypoint measurement
-    size_t slot;
-    bool success;
-    std::tie(slot, success) = states_.findSlot(nframe_id);
-    if (!success)
+    // Add an observation to a landmark.
+    inline ceres::ResidualBlockId Estimator::addObservation(const FramePtr &frame,
+                                                            const size_t keypoint_idx)
     {
-      LOG(ERROR) << "Tried to add observation for frame that is either already "
-                 << "marginalized out or not yet added to the state. ID = "
-                 << nframe_id;
-      return nullptr;
+      const BackendId nframe_id = createNFrameId(frame->bundleId());
+      DEBUG_CHECK_GE(frame->level_vec_(keypoint_idx), 0);
+      const int cam_idx = frame->getNFrameIndex();
+      // get Landmark ID.
+      const BackendId landmark_backend_id = createLandmarkId(
+          frame->track_id_vec_[keypoint_idx]);
+      DEBUG_CHECK(isLandmarkAdded(landmark_backend_id)) << "landmark not added";
+
+      KeypointIdentifier kid(frame, keypoint_idx);
+      // check for double observations
+      DEBUG_CHECK(landmarks_map_.at(landmark_backend_id).observations.find(kid) == landmarks_map_.at(landmark_backend_id).observations.end())
+          << "Trying to add the same landmark for the second time";
+
+      // get the keypoint measurement
+      size_t slot;
+      bool success;
+      std::tie(slot, success) = states_.findSlot(nframe_id);
+      if (!success)
+      {
+        LOG(ERROR) << "Tried to add observation for frame that is either already "
+                   << "marginalized out or not yet added to the state. ID = "
+                   << nframe_id;
+        return nullptr;
+      }
+
+      Eigen::Matrix2d information = Eigen::Matrix2d::Identity();
+      information *= 1.0 / static_cast<double>(1 << frame->level_vec_(keypoint_idx));
+
+      // create error term
+      DEBUG_CHECK(std::dynamic_pointer_cast<const Camera>(
+          camera_rig_->getCameraShared(cam_idx)))
+          << "Incorrect pointer cast requested. ";
+      std::shared_ptr<ceres_backend::ReprojectionError> reprojection_error =
+          std::make_shared<ceres_backend::ReprojectionError>(
+              std::static_pointer_cast<const Camera>(
+                  camera_rig_->getCameraShared(cam_idx)),
+              frame->px_vec_.col(keypoint_idx), information);
+
+      if (isLandmarkFixed(landmark_backend_id.asInteger()))
+      {
+        reprojection_error->setPointConstant(true);
+      }
+
+      BackendId extrinsics_id = constant_extrinsics_ids_[cam_idx];
+      if (estimate_temporal_extrinsics_)
+      {
+        extrinsics_id = changeIdType(nframe_id, IdType::Extrinsics, cam_idx);
+      }
+      ceres::ResidualBlockId ret_val = map_ptr_->addResidualBlock(
+          reprojection_error,
+          cauchy_loss_function_ptr_ ? cauchy_loss_function_ptr_.get() : nullptr,
+          map_ptr_->parameterBlockPtr(nframe_id.asInteger()),
+          map_ptr_->parameterBlockPtr(landmark_backend_id.asInteger()),
+          map_ptr_->parameterBlockPtr(extrinsics_id.asInteger()));
+
+      // remember
+      landmarks_map_.at(landmark_backend_id).observations.insert(std::pair<KeypointIdentifier, uint64_t>(kid, reinterpret_cast<uint64_t>(ret_val)));
+
+      return ret_val;
     }
-
-    Eigen::Matrix2d information = Eigen::Matrix2d::Identity();
-    information *= 1.0 / static_cast<double>(1 << frame->level_vec_(keypoint_idx));
-
-    // create error term
-    DEBUG_CHECK(std::dynamic_pointer_cast<const Camera>(
-        camera_rig_->getCameraShared(cam_idx)))
-        << "Incorrect pointer cast requested. ";
-    std::shared_ptr<ceres_backend::ReprojectionError> reprojection_error =
-        std::make_shared<ceres_backend::ReprojectionError>(
-            std::static_pointer_cast<const Camera>(
-                camera_rig_->getCameraShared(cam_idx)),
-            frame->px_vec_.col(keypoint_idx), information);
-
-    if (isLandmarkFixed(landmark_backend_id.asInteger()))
-    {
-      reprojection_error->setPointConstant(true);
-    }
-
-    BackendId extrinsics_id = constant_extrinsics_ids_[cam_idx];
-    if (estimate_temporal_extrinsics_)
-    {
-      extrinsics_id = changeIdType(nframe_id, IdType::Extrinsics, cam_idx);
-    }
-    ceres::ResidualBlockId ret_val = map_ptr_->addResidualBlock(
-        reprojection_error,
-        cauchy_loss_function_ptr_ ? cauchy_loss_function_ptr_.get() : nullptr,
-        map_ptr_->parameterBlockPtr(nframe_id.asInteger()),
-        map_ptr_->parameterBlockPtr(landmark_backend_id.asInteger()),
-        map_ptr_->parameterBlockPtr(extrinsics_id.asInteger()));
-
-    // remember
-    landmarks_map_.at(landmark_backend_id).observations.insert(std::pair<KeypointIdentifier, uint64_t>(kid, reinterpret_cast<uint64_t>(ret_val)));
-
-    return ret_val;
-  }
+  } // namespace ceres_backend
 
 } // namespace svo

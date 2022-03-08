@@ -240,7 +240,7 @@ namespace svo
 
   protected:
     // modules
-    Estimator backend_;
+    ceres_backend::Estimator backend_;
     std::shared_ptr<ImuHandler> imu_handler_;
     std::unique_ptr<MotionDetector> motion_detector_;
     size_t no_motion_counter_;
