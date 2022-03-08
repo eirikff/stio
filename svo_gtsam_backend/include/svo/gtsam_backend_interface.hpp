@@ -54,6 +54,9 @@ namespace svo
 
   struct GtsamBackendOptions
   {
+    // If true, use the PreintegratedCombinedMeasurement factor instead
+    // of PreintegraedMeasurement and Randon walk factors.
+    bool use_combined_factor = true;
   };
 
   class GtsamBackendInterface : public AbstractBundleAdjustment
