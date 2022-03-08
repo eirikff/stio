@@ -39,10 +39,20 @@ namespace svo
                                                           const MapPtr &map,
                                                           bool &have_motion_prior)
   {
+    /*
+    update keyframe world poses into new_frames and last_frames.
+      predict pose using imu measurements if frames are not keyframes.
+    update landmark world points in map.
+    add imu measurements since last call to backend.
+
+    */
   }
 
   void GtsamBackendInterface::bundleAdjustment(const FrameBundlePtr &frame_bundle)
   {
+    /*
+
+    */
   }
 
   void GtsamBackendInterface::reset()

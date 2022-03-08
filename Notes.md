@@ -63,3 +63,4 @@ Much of the code from the ceres backend can be used as common code. E.g.
 * the estimator class is probably what needs to re-implemented using gtsam;
 *
 
+**Idea**: have a small bundle adjustment/SFM pipeline running between each keyframe to maybe minimize the drift of integrating the IMU measurements. 
