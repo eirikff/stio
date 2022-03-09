@@ -39,13 +39,94 @@ namespace svo
                                                           const MapPtr &map,
                                                           bool &have_motion_prior)
   {
-    /*
-    update keyframe world poses into new_frames and last_frames.
-      predict pose using imu measurements if frames are not keyframes.
-    update landmark world points in map.
-    add imu measurements since last call to backend.
+    if (stop_thread_)
+    {
+      return;
+    }
 
-    */
+    std::lock_guard<std::mutex> lock(mutex_backend_);
+
+    // Setup motion detector
+    if (motion_detector_)
+    {
+      motion_detector_->setFrames(last_frames, new_frames);
+    }
+
+    // get the imu measurements up to the timestamp of the frame and save them in
+    // a member variable
+    bool success = getImuMeasurements(new_frames->getMinTimestampSeconds());
+
+    // this adds the latest imu measurements and preintegrates them
+    backend_.addImuMeasurements(imu_meas_);
+
+    // add projection factors using frames
+    // TODO: should this go here or in the bundleAdjustment/optimizationLoop function?
+    // TODO: should it take in both new_frames and last_frames, or just new_frames?
+    backend_.addLandmarkObservations(new_frames, last_frames);
+
+    // gets the latest estimate from the backend and sets the frame T_W_B.
+    // should also update speed and bias of the frame using latest estimate from backend.
+    updateBundleStateWithBackend(new_frames);
+
+    // after this call we should have motion prior available
+    // TODO: how is this used? is the motion prior from the framebundle variables?
+    // TODO: when do we *not* have motion prior available? some of the above calls might fail,
+    //       this should be handled.
+    have_motion_prior = true;
+
+    // Skip updating the frame variables if no update is available
+    if (last_updated_nframe_ == last_optimized_nframe_.load())
+    {
+      VLOG(3) << "No map update available.";
+      return;
+    }
+
+    // Update active keyframes with latest estimate
+    int n_frames_updated = 0;
+    for (const FramePtr &keyframe : active_keyframes_)
+    {
+      // should do the same as updateBundleStateWithBackend, but just on one single
+      // frame instead of the bundle. there's a subtle difference. see ceres backend.
+      // second argument is if it should update speed and bias or not.
+      // TODO: is this needed? might be for speed reasons? might just leave it out
+      updateFrameStateWithBackend(keyframe, false);
+      n_frames_updated++;
+    }
+
+    // Update last frame bundle
+    for (const FramePtr &last_frame : *last_frames)
+    {
+      // ceres backend only updates if last_frame is *not* keyframe, why?
+      // TODO: should gtsam backend also only update when not keyframe?
+      // need better understanding of what last_frames actually are.
+      updateFrameStateWithBackend(last_frame, true);
+    }
+
+    if (outlier_rejection_ && last_frames)
+    {
+      size_t n_deleted_edges = 0;
+      size_t n_deleted_corners = 0;
+      std::vector<int> deleted_points;
+      for (FramePtr &frame : *last_frames)
+      {
+        outlier_rejection_->removeOutliers(
+            *frame, n_deleted_edges, n_deleted_corners, deleted_points);
+      }
+      // remove landmark variables from the factor graph based on the id
+      // from outlier rejection
+      backend_.removePointsByPointIds(deleted_points);
+      VLOG(6) << "Outlier rejection: removed " << n_deleted_edges
+              << " edgelets and " << n_deleted_corners << " corners.";
+    }
+
+    gtsam_backend::SpeedAndBias speed_and_bias;
+    // gets the latest speed and bias estimate for last_frames (likely from the preintegration)
+    bool success = backend_.getSpeedAndBias(last_frames->getBundleId(), speed_and_bias);
+    imu_handler_->setAccelerometerBias(speed_and_bias.tail<3>());
+    imu_handler_->setGyroscopeBias(speed_and_bias.segment<3>(3));
+
+    // shift state
+    last_updated_nframe_ = last_optimized_nframe_.load();
   }
 
   void GtsamBackendInterface::bundleAdjustment(const FrameBundlePtr &frame_bundle)
