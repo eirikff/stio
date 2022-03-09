@@ -74,6 +74,8 @@ namespace svo
                           const MotionDetectorOptions &motion_detector_options,
                           const CameraBundlePtr &camera_bundle);
 
+    ~GtsamBackendInterface();
+
     /**
      * @brief This is called BEFORE frame is processed in frontend
      * @param new_frames Pose prior is written into transformation

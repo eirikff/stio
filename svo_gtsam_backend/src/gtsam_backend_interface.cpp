@@ -34,6 +34,14 @@ namespace svo
     LOG(FATAL) << "Constructor for GtsamBackendInterface not implemented yet.";
   }
 
+  GtsamBackendInterface::~GtsamBackendInterface()
+  {
+    if (thread_ != nullptr)
+    {
+      quitThread();
+    }
+  }
+
   void GtsamBackendInterface::loadMapFromBundleAdjustment(const FrameBundlePtr &new_frames,
                                                           const FrameBundlePtr &last_frames,
                                                           const MapPtr &map,
