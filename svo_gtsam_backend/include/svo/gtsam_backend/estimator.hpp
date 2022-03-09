@@ -46,6 +46,9 @@ namespace svo
       gtsam::Pose3 T_C_B; // transformation between camera and body frame
     };
 
+    // [velocity, gyro biases, accel biases]
+    using SpeedAndBias = Eigen::Matrix<double, 9, 1>;
+
     class Estimator
     {
     public: // members
