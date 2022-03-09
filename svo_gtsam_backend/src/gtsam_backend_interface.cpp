@@ -131,9 +131,14 @@ namespace svo
 
   void GtsamBackendInterface::bundleAdjustment(const FrameBundlePtr &frame_bundle)
   {
-    /*
+    if (stop_thread_)
+      return;
 
-    */
+    // if imu measurements could not be added.
+    if (last_added_nframe_imu_ == last_added_nframe_images_)
+      return;
+
+    std::lock_guard<std::mutex> lock(mutex_backend_);
   }
 
   void GtsamBackendInterface::reset()
