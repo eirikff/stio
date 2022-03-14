@@ -119,6 +119,17 @@ namespace svo
       bool getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias);
 
       /**
+       * @brief Get the pose T_WS (world to sensor/imu) at node for keyframe with
+       * id kf_id.
+       *
+       * @param kf_id Id of keyframe.
+       * @param T_WS Output variable for result.
+       * @return true on success.
+       * @return false on failure.
+       */
+      bool getT_WS(const BundleId &kf_id, Transformation &T_WS);
+
+      /**
        * @brief Add velocity prior to node of keyframe with id kf_id.
        *
        * @param kf_id Id of keyframe.
@@ -128,6 +139,8 @@ namespace svo
        * @return false on failure.
        */
       bool addVelocityPrior(const BundleId &kf_id, const Eigen::Vector3d &value, double sigma);
+
+      bool optimize();
 
     protected: // members
       std::shared_ptr<gtsam::ISAM2> isam_;

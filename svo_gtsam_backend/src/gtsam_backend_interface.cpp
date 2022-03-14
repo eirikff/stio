@@ -293,6 +293,50 @@ namespace svo
     VLOG(1) << "Started optimization thread.";
     while (!stop_thread_)
     {
+      { // create scope to release lock at each iteration
+        std::unique_lock<std::mutex> lock(mutex_backend_);
+
+        wait_condition_.wait(
+            lock, [&]
+            { return ((last_added_nframe_images_ != last_optimized_nframe_.load())) || stop_thread_; });
+
+        if (stop_thread_)
+        {
+          return;
+        }
+
+        // TODO: Marginalize, but how?
+
+        // Optimize
+        // add the new factor graph to the isam2 optimizer
+        // have some extra calls to update() to get more accurate estimate
+        // TODO: should this also calculate the latest estimates? i.e. call
+        //       isam2::calculateEstimate() and update variables for keyframes
+        //       landmarks, or should those calculations be done when they are
+        //       requested (e.g. with getT_WS, getSpeedAndBias, etc)?
+        //       it is possible to calculate the estimates of the variables
+        //       most likely to be retrieved and handle the cases when the
+        //       value is not already calculated?
+        backend_.optimize();
+
+        last_optimized_nframe_.store(last_added_nframe_images_);
+
+        Transformation T_WS;
+        backend_.getT_WS(last_optimized_nframe_.load(), T_WS);
+
+        gtsam_backend::SpeedAndBias speed_and_bias;
+        backend_.getSpeedAndBias(last_optimized_nframe_, speed_and_bias);
+
+        // Save state for visualization
+        last_state_.set_T_W_B(T_WS);
+        last_state_.set_W_v_B(speed_and_bias.head<3>());
+        last_state_.setGyroBias(speed_and_bias.segment<3>(3));
+        last_state_.setAccBias(speed_and_bias.tail<3>());
+
+        // TODO: publish
+      } // release backend mutex
     }
+
+    LOG(INFO) << "Optimization thread ended.";
   }
 }
