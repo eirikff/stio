@@ -70,6 +70,65 @@ namespace svo
 
       void addCamParams(const CameraBundlePtr &camera_bundle);
 
+      /**
+       * @brief Add the imu measurements to the preintegrator.
+       *
+       * @param meas The IMU measurements to add.
+       * @return true on success.
+       * @return false on failure.
+       */
+      bool addImuMeasurements(const ImuMeasurements &meas);
+
+      /**
+       * @brief Add new landmarks to the factor graph if they don't already
+       * exists.
+       *
+       * @param frame Frame with associated landmark obersvations.
+       * @return true on success.
+       * @return false on failure.
+       */
+      bool addLandmarks(const FramePtr &frame);
+
+      /**
+       * @brief Add new landmark observations, i.e. reprojection factors between
+       * frame node and landmark node.
+       *
+       * @param frame Frame with landmark oberservations to add.
+       * @return true on success.
+       * @return false on failure. (e.g. if the frame id or landmark id is not a node)
+       */
+      bool addObservations(const FramePtr &frame);
+
+      /**
+       * @brief Removes landmark observation from factor graph.
+       *
+       * @param pt_ids Ids of points to remove.
+       * @return true on success.
+       * @return false on failure.
+       */
+      bool removePointsByPointIds(const std::vector<int> &pt_ids);
+
+      /**
+       * @brief Get the speed and bias estimates from the backend.
+       *
+       * @param kf_id Id of keyframe/node to get estimate from.
+       * @param speed_and_bias Speed and bias estimate output.
+       * @return true on success.
+       * @return false on failure.
+       */
+      bool getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias);
+
+      /**
+       * @brief Add velocity prior to node of keyframe with id kf_id.
+       *
+       * @param kf_id Id of keyframe.
+       * @param value Prior value.
+       * @param sigma Standard deviation/uncertainty of prior.
+       * @return true on success.
+       * @return false on failure.
+       */
+      bool addVelocityPrior(const BundleId &kf_id, const Eigen::Vector3d &value, double sigma);
+
     protected: // members
       std::shared_ptr<gtsam::ISAM2> isam_;
       std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;

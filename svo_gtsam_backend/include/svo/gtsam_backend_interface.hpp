@@ -219,6 +219,8 @@ namespace svo
     /// keyframes that are contained in backend. Oldest keyframe in front
     std::deque<FramePtr> active_keyframes_;
 
+    ImuMeasurements latest_imu_meas_;
+
     // visualization
     ViNodeState last_state_;
     // CeresBackendPublisher::Ptr publisher_;
@@ -232,5 +234,47 @@ namespace svo
      * @brief Loop of optimization thread
      */
     void optimizationLoop();
+
+    /**
+     * @brief Get the latest IMU measurements from imu_handler_ up to the timestamp
+     * and save them to latest_imu_meas_.
+     *
+     * @param timestamp_ns Timestamp of frame.
+     * @return true On success.
+     * @return false On failure.
+     */
+    bool getImuMeasurements(double timestamp_ns);
+
+    /**
+     * @brief Get the latest estimate from the backend and set the frame bundle's
+     * T_W_B, speed, and bias members.
+     *
+     * @param new_frames New frames.
+     * @return true On success.
+     * @return false On failure.
+     */
+    bool updateBundleStateWithBackend(const FrameBundlePtr &new_frames);
+
+    /**
+     * @brief Get the latest estimate from the backend and set the single frame's
+     * T_W_B. If update_speed_bias = true, also update the speed and bias estimates.
+     *
+     * @param frame The frame.
+     * @param update_speed_bias Whether or not to also update speed and bias. This
+     * is a parameter for speed reasons.
+     * @return true On success.
+     * @return false On failure.
+     */
+    bool updateFrameStateWithBackend(const FramePtr &frame, bool update_speed_bias);
+
+    /**
+     * @brief Add landmarks that are not already in the factor graph backend. Also
+     * add observations of landmarks seen in the frame.
+     *
+     * @param frame Frame to be processed.
+     * @return true On success.
+     * @return false On failure.
+     */
+    bool addLandmarksAndObservationsToBackend(const FramePtr &frame);
   };
 } // namespace svo
