@@ -147,6 +147,62 @@ namespace svo
       return;
 
     std::lock_guard<std::mutex> lock(mutex_backend_);
+
+    // Checking for zero motion
+    bool velocity_prior_added = false;
+    if (motion_detector_)
+    {
+      double sigma = 0;
+      if (!motion_detector_->isImageMoving(sigma))
+      {
+        ++no_motion_counter_;
+
+        if (no_motion_counter_ > options_.backend_zero_motion_check_n_frames)
+        {
+          image_motion_detector_stationary_ = true;
+          VLOG(5) << "Image is not moving: adding zero velocity prior.";
+          // add velocity prior to keyframe with id getBundleId. In this case
+          // add zero velocity. sigma should be uncertainty for factor
+          if (!backend_.addVelocityPrior(frame_bundle->getBundleId(), gtsam::Z_3x1, sigma))
+          {
+            LOG(ERROR) << "Failed to add a zero velocity prior!";
+          }
+          else
+          {
+            velocity_prior_added = true;
+          }
+        }
+      }
+      else
+      {
+        image_motion_detector_stationary_ = false;
+        no_motion_counter_ = 0;
+      }
+    }
+
+    // only use imu-based motion detection when the images are not good
+    if (!image_motion_detector_stationary_ && imu_motion_detector_stationary_)
+    {
+      VLOG(5) << "IMU determined stationary, adding prior at time "
+              << frame_bundle->at(0)->getTimestampSec() << std::endl;
+      if (!backend_.addVelocityPrior(frame_bundle->getBundleId(), gtsam::Z_3x1, 0.005))
+      {
+        LOG(ERROR) << "Failed to add a zero velocity prior!";
+      }
+      else
+      {
+        velocity_prior_added = true;
+      }
+    }
+
+    size_t num_new_observations = 0;
+    for (const FramePtr &frame : *frame_bundle)
+    {
+      if (frame->isKeyframe())
+      {
+        active_keyframes_.push_back(frame);
+      }
+    }
   }
 
   void GtsamBackendInterface::reset()
