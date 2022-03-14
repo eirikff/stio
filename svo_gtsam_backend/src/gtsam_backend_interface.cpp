@@ -195,14 +195,31 @@ namespace svo
       }
     }
 
-    size_t num_new_observations = 0;
     for (const FramePtr &frame : *frame_bundle)
     {
       if (frame->isKeyframe())
       {
         active_keyframes_.push_back(frame);
+        // adds landmarks not already in the factor graph to the FC
+        // also adds observations (reprojection factors) for the landmarks
+        // seen in this frame
+        addLandmarksAndObservationsToBackend(frame);
+        // backend_.addLandmarks(frame);
+        // backend_.addObservations(frame);
+      }
+      else
+      {
+        // TODO: what to do with the remaining observations? the ceres backend
+        //       seem to also add observations from the non-keyframe frames, but
+        //       how can this be done in the factor graph when one observations =
+        //       one factor?
       }
     }
+
+    last_added_nframe_images_ = frame_bundle->getBundleId();
+    last_added_frame_stamp_ns_ = frame_bundle->getMinTimestampNanoseconds();
+
+    wait_condition_.notify_one();
   }
 
   void GtsamBackendInterface::reset()
