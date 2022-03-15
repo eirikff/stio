@@ -1,5 +1,8 @@
 #include "svo/gtsam_backend/estimator.hpp"
 #include <svo/global.h>
+#include <svo/common/imu_calibration.h>
+#include <svo/common/point.h>
+#include <svo/common/frame.h>
 
 #include <iostream>
 
@@ -7,6 +10,20 @@ namespace svo
 {
   namespace gtsam_backend
   {
+    Estimator::Estimator()
+    {
+      gtsam::ISAM2Params isam_params;
+      isam_ = std::make_shared<gtsam::ISAM2>(isam_params);
+
+      graph_ = std::make_shared<gtsam::NonlinearFactorGraph>();
+    }
+
+    void Estimator::addImuParams(const gtsam_backend::ImuParameters::shared_ptr params)
+    {
+      imu_params_ = params;
+
+      preint_ = std::make_shared<gtsam::PreintegratedCombinedMeasurements>(params->int_param);
+    }
 
     void Estimator::addCamParams(const CameraBundlePtr &camera_bundle)
     {
@@ -45,5 +62,100 @@ namespace svo
 
       LOG(INFO) << "Camera parameters loaded to gtsam_backend::Estimator.";
     }
+
+    bool Estimator::addImuMeasurements(const ImuMeasurements &meas)
+    {
+      static double prev_timestamp = 0;
+      for (const ImuMeasurement &m : meas)
+      {
+        // set the previous timestamp only for the first measurement
+        if (prev_timestamp == 0)
+        {
+          prev_timestamp = m.timestamp_;
+        }
+
+        double dt = m.timestamp_ - prev_timestamp;
+        prev_timestamp = m.timestamp_;
+
+        preint_->integrateMeasurement(m.linear_acceleration_, m.angular_velocity_, dt);
+      }
+
+      return true;
+    }
+
+    bool Estimator::addLandmark(const PointPtr &point)
+    {
+      int id = point->id();
+
+      initial_estimate_.insert(L(id), point->pos());
+
+      return true;
+    }
+
+    bool Estimator::addObservation(const FramePtr &frame, size_t kp_idx)
+    {
+      PointPtr &p = frame->landmark_vec_[kp_idx];
+
+      gtsam::Point2 meas = frame->px_vec_.col(kp_idx);
+      //  TODO: make noise sigma value parameter/option
+      auto noise = gtsam::noiseModel::Isotropic::Sigma(2, 1);
+
+      graph_->emplace_shared<
+          gtsam::GenericProjectionFactor<gtsam::Pose3, gtsam::Point3, CamParameters::Calibration>>(
+          meas, noise, X(frame->bundleId()), L(p->id()), cam_params_->K);
+
+      return true;
+    }
+
+    bool Estimator::removePointsByPointIds(const std::vector<int> &pt_ids)
+    {
+
+      return false;
+    }
+
+    bool Estimator::getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias)
+    {
+      // TODO: measure speed of this and consider if it should be cached somewhere.
+      gtsam::Vector3 speed = isam_->calculateEstimate<gtsam::Vector3>(V(kf_id));
+      gtsam::Vector6 bias = isam_->calculateEstimate<gtsam::Vector6>(B(kf_id));
+      speed_and_bias.head<3>(0) = speed;
+      speed_and_bias.head<6>(3) = bias;
+
+      return true;
+    }
+
+    bool Estimator::getT_WS(const BundleId &kf_id, Transformation &T_WS)
+    {
+      // TODO: measure speed of this and consider if it should be cached somewhere.
+      gtsam::Pose3 pose = isam_->calculateEstimate<gtsam::Pose3>(X(kf_id));
+      T_WS = Transformation(pose.matrix());
+
+      return true;
+    }
+
+    bool Estimator::addVelocityPrior(const BundleId &kf_id, const Eigen::Vector3d &value, double sigma)
+    {
+      auto noise_model = gtsam::noiseModel::Isotropic::Sigma(3, sigma);
+      graph_->addPrior(V(kf_id), value, noise_model);
+
+      return true;
+    }
+
+    bool Estimator::optimize()
+    {
+
+      return true;
+    }
+
+    bool Estimator::isPointInEstimator(const int id)
+    {
+      if (isam_->valueExists(L(id)))
+      {
+        return true;
+      }
+
+      return false;
+    }
+
   } // namespace gtsam_backend
 } // namespace svo
