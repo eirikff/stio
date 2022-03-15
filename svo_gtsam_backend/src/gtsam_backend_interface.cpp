@@ -413,7 +413,7 @@ namespace svo
 
       if (backend_.isPointInEstimator(point->id()))
       {
-        if (!backend_.addObservation(point))
+        if (!backend_.addObservation(frame, i))
         {
           LOG(WARNING) << "Failed to add observation of existing landmark.";
           continue;
