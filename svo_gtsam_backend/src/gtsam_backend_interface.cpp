@@ -402,6 +402,54 @@ namespace svo
 
   bool GtsamBackendInterface::addLandmarksAndObservationsToBackend(const FramePtr &frame)
   {
+    for (size_t i = 0; i < frame->numFeatures(); i++)
+    {
+      const PointPtr &point = frame->landmark_vec_[i];
+
+      if (point == nullptr)
+      {
+        continue;
+      }
+
+      if (backend_.isPointInEstimator(point->id()))
+      {
+        if (!backend_.addObservation(point))
+        {
+          LOG(WARNING) << "Failed to add observation of existing landmark.";
+          continue;
+        }
+      }
+      else
+      {
+        if (isMapPoint(frame->type_vec_[i]))
+        {
+          // map points are likely points used for loop closing and global map
+          continue;
+        }
+
+        // check if we have enough observations. Might not be the case if seed
+        // original frame was already dropped.
+        if (point->obs_.size() < options_.min_num_obs)
+        {
+          VLOG(10) << "Point with " << point->obs_.size()
+                   << " have less observations than the minimum of " << options_.min_num_obs;
+          continue;
+        }
+
+        if (!backend_.addLandmark(point))
+        {
+          LOG(WARNING) << "Failed to add new landmark.";
+          continue;
+        }
+
+        if (!backend_.addObservation(frame, i))
+        {
+          LOG(WARNING) << "Failed to add observation of newly created landmark.";
+          continue;
+        }
+      }
+    }
+
     return false;
   }
 
