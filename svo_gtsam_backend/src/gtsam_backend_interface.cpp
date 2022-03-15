@@ -339,4 +339,70 @@ namespace svo
 
     LOG(INFO) << "Optimization thread ended.";
   }
-}
+
+  bool GtsamBackendInterface::getImuMeasurements(double timestamp_ns)
+  {
+    double timestamp_s = timestamp_ns * common::conversions::kNanoSecondsToSeconds;
+    if (!imu_handler_->waitTill(timestamp_s))
+    {
+      return false;
+    }
+
+    // Get measurements, newest is interpolated to exactly match timestamp of
+    // frame_bundle
+    if (!imu_handler_->getMeasurementsContainingEdges(timestamp_s, latest_imu_meas_, true))
+    {
+      LOG(ERROR) << "Could not retrieve IMU measurements."
+                 << " Last frame was at " << last_added_frame_stamp_ns_
+                 << ", current is at " << timestamp_ns;
+      return false;
+    }
+
+    return true;
+  }
+
+  bool GtsamBackendInterface::updateBundleStateWithBackend(const FrameBundlePtr &new_frames)
+  {
+    BundleId bid = new_frames->getBundleId();
+
+    Transformation T_WS;
+    bool success = backend_.getT_WS(bid, T_WS);
+    new_frames->set_T_W_B(T_WS);
+
+    gtsam_backend::SpeedAndBias speed_and_bias;
+    success = backend_.getSpeedAndBias(bid, speed_and_bias);
+    // TODO: why are we rotating by velocity? taken from ceres backend
+    new_frames->setIMUState(T_WS.getRotation().rotate(speed_and_bias.block<3, 1>(0, 0)),
+                            speed_and_bias.block<3, 1>(3, 0),
+                            speed_and_bias.block<3, 1>(6, 0));
+
+    return true;
+  }
+
+  bool GtsamBackendInterface::updateFrameStateWithBackend(const FramePtr &frame, bool update_speed_bias)
+  {
+    BundleId bid = frame->bundleId();
+
+    Transformation T_WS;
+    bool success = backend_.getT_WS(bid, T_WS);
+    T_WS.getRotation().normalize();
+    frame->set_T_w_imu(T_WS);
+
+    if (update_speed_bias)
+    {
+      gtsam_backend::SpeedAndBias speed_and_bias;
+      success = backend_.getSpeedAndBias(bid, speed_and_bias);
+      frame->setIMUState(T_WS.getRotation().rotate(speed_and_bias.block<3, 1>(0, 0)),
+                         speed_and_bias.block<3, 1>(3, 0),
+                         speed_and_bias.block<3, 1>(6, 0));
+    }
+
+    return true;
+  }
+
+  bool GtsamBackendInterface::addLandmarksAndObservationsToBackend(const FramePtr &frame)
+  {
+    return false;
+  }
+
+} // namespace svo
