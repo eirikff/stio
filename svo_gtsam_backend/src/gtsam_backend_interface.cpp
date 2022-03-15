@@ -47,6 +47,8 @@ namespace svo
                                                           const MapPtr &map,
                                                           bool &have_motion_prior)
   {
+    bool success;
+
     if (stop_thread_)
     {
       return;
@@ -62,7 +64,7 @@ namespace svo
 
     // get the imu measurements up to the timestamp of the frame and save them in
     // a member variable
-    bool success = getImuMeasurements(new_frames->getMinTimestampSeconds());
+    success = getImuMeasurements(new_frames->getMinTimestampSeconds());
 
     // this adds the latest imu measurements and preintegrates them
     backend_.addImuMeasurements(latest_imu_meas_);
@@ -129,7 +131,7 @@ namespace svo
 
     gtsam_backend::SpeedAndBias speed_and_bias;
     // gets the latest speed and bias estimate for last_frames (likely from the preintegration)
-    bool success = backend_.getSpeedAndBias(last_frames->getBundleId(), speed_and_bias);
+    success = backend_.getSpeedAndBias(last_frames->getBundleId(), speed_and_bias);
     imu_handler_->setAccelerometerBias(speed_and_bias.tail<3>());
     imu_handler_->setGyroscopeBias(speed_and_bias.segment<3>(3));
 
@@ -195,6 +197,8 @@ namespace svo
       }
     }
 
+    // TODO: don't care about stereo, so frame_bundle should only have one single
+    //       image. could/should this loop be remove?
     for (const FramePtr &frame : *frame_bundle)
     {
       if (frame->isKeyframe())
@@ -215,6 +219,9 @@ namespace svo
         //       one factor?
       }
     }
+
+    // TODO: imu preintegration should be added to the factor graph here if
+    //       the frame in the frame bundle is a keyframe
 
     last_added_nframe_images_ = frame_bundle->getBundleId();
     last_added_frame_stamp_ns_ = frame_bundle->getMinTimestampNanoseconds();
@@ -262,12 +269,12 @@ namespace svo
     const ImuCalibration &calib = imu_handler_->imu_calib_;
     // TODO: which direction should gravity_magnitude be? + or - coeff?
     auto p = std::make_shared<gtsam_backend::ImuParameters>(gtsam::Vector3(0, 0, calib.gravity_magnitude));
-    p->accelerometerCovariance = gtsam::I_3x3 * calib.acc_noise_density * calib.acc_noise_density;
-    p->gyroscopeCovariance = gtsam::I_3x3 * calib.gyro_noise_density * calib.gyro_noise_density;
-    p->biasAccCovariance = gtsam::I_3x3 * calib.acc_bias_random_walk_sigma * calib.acc_bias_random_walk_sigma;
-    p->biasOmegaCovariance = gtsam::I_3x3 * calib.gyro_bias_random_walk_sigma * calib.gyro_bias_random_walk_sigma;
-    p->integrationCovariance = gtsam::I_3x3 * options_.preintegration_sigma * options_.preintegration_sigma;
-    p->biasAccOmegaInt = gtsam::I_6x6 * options_.bias_preintegration_sigma * options_.bias_preintegration_sigma;
+    p->int_param->accelerometerCovariance = gtsam::I_3x3 * calib.acc_noise_density * calib.acc_noise_density;
+    p->int_param->gyroscopeCovariance = gtsam::I_3x3 * calib.gyro_noise_density * calib.gyro_noise_density;
+    p->int_param->biasAccCovariance = gtsam::I_3x3 * calib.acc_bias_random_walk_sigma * calib.acc_bias_random_walk_sigma;
+    p->int_param->biasOmegaCovariance = gtsam::I_3x3 * calib.gyro_bias_random_walk_sigma * calib.gyro_bias_random_walk_sigma;
+    p->int_param->integrationCovariance = gtsam::I_3x3 * options_.preintegration_sigma * options_.preintegration_sigma;
+    p->int_param->biasAccOmegaInt = gtsam::I_6x6 * options_.bias_preintegration_sigma * options_.bias_preintegration_sigma;
     p->accel_max = calib.saturation_accel_max;
     p->omega_max = calib.saturation_omega_max;
     p->rate = calib.imu_rate;

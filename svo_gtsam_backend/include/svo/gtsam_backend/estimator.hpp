@@ -9,9 +9,11 @@
 #include <gtsam/navigation/CombinedImuFactor.h>
 #include <gtsam/slam/ProjectionFactor.h>
 #include <gtsam/geometry/Cal3DS2.h>
+#include <gtsam/inference/Symbol.h>
 
 #include <svo/global.h>
 #include <svo/vio_common/backend_types.hpp>
+#include <svo/common/imu_calibration.h>
 
 namespace svo
 {
@@ -19,14 +21,19 @@ namespace svo
   {
     // TODO: move definition to it's own types file?
     // PreintegratedCombinedMeasurements work even if the Combined Factor is not used.
-    struct ImuParameters : public gtsam::PreintegratedCombinedMeasurements::Params
+    struct ImuParameters
     {
       using shared_ptr = std::shared_ptr<ImuParameters>;
+      using IntegrationParams = gtsam::PreintegratedCombinedMeasurements::Params;
 
       EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
       ImuParameters(const gtsam::Vector3 &n_gravity)
-          : gtsam::PreintegratedCombinedMeasurements::Params(n_gravity) {}
+      {
+        int_param = boost::make_shared<IntegrationParams>(n_gravity);
+      }
+
+      boost::shared_ptr<IntegrationParams> int_param;
 
       double accel_max = 150; // maximum acceleration in [m/s^2]
       double omega_max = 50;  // maximum angular velocity   in [rad/s]
@@ -38,16 +45,22 @@ namespace svo
     struct CamParameters
     {
       using shared_ptr = std::shared_ptr<CamParameters>;
+      using Calibration = gtsam::Cal3DS2;
 
       EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
       // TODO: this calibration definition assumes radial-tangental distortion. change to also support equidistant/fisheye
-      gtsam::Cal3DS2::shared_ptr K;
+      Calibration::shared_ptr K;
       gtsam::Pose3 T_C_B; // transformation between camera and body frame
     };
 
     // [velocity, gyro biases, accel biases]
     using SpeedAndBias = Eigen::Matrix<double, 9, 1>;
+
+    using gtsam::symbol_shorthand::B; // bias (accelerometer + gyroscope)
+    using gtsam::symbol_shorthand::L; // landmark
+    using gtsam::symbol_shorthand::V; // velocity
+    using gtsam::symbol_shorthand::X; // pose
 
     class Estimator
     {
@@ -59,14 +72,9 @@ namespace svo
       double reinit_timestamp_start_;
 
     public: // functions
-      Estimator()
-      {
-      }
+      Estimator();
 
-      inline void addImuParams(const gtsam_backend::ImuParameters::shared_ptr params)
-      {
-        imu_params_ = params;
-      }
+      void addImuParams(const gtsam_backend::ImuParameters::shared_ptr params);
 
       void addCamParams(const CameraBundlePtr &camera_bundle);
 
@@ -156,6 +164,9 @@ namespace svo
       std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
       gtsam_backend::CamParameters::shared_ptr cam_params_;
+      std::shared_ptr<gtsam::PreintegratedCombinedMeasurements> preint_;
+      gtsam::Values initial_estimate_;
+      gtsam::Values latest_results_;
 
     protected: // functions
     };
