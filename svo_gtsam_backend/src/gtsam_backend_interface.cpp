@@ -429,10 +429,10 @@ namespace svo
 
         // check if we have enough observations. Might not be the case if seed
         // original frame was already dropped.
-        if (point->obs_.size() < options_.min_num_obs)
+        if (point->obs_.size() < options_.min_obsv_count)
         {
           VLOG(10) << "Point with " << point->obs_.size()
-                   << " have less observations than the minimum of " << options_.min_num_obs;
+                   << " have less observations than the minimum of " << options_.min_obsv_count;
           continue;
         }
 

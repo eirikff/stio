@@ -50,6 +50,10 @@ namespace svo
     double preintegration_sigma = 1e-4;
     /// Sigma for the bias used for pre-integration.
     double bias_preintegration_sigma = 1e-2;
+
+    /// Minimum number of observations a landmark must have to be added to the
+    /// backend.
+    size_t min_obsv_count = 2;
   };
 
   struct GtsamBackendOptions
