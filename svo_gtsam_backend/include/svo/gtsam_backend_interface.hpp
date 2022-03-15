@@ -160,6 +160,7 @@ namespace svo
     {
       // return static_cast<int>(backend_.numFrames());
       LOG(FATAL) << "Not implemented yet.";
+      return -1;
     }
 
     inline bool isFixedToGlobalMap() const override
