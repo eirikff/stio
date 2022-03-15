@@ -80,24 +80,24 @@ namespace svo
       bool addImuMeasurements(const ImuMeasurements &meas);
 
       /**
-       * @brief Add new landmarks to the factor graph if they don't already
-       * exists.
+       * @brief Add new landmark to the factor graph if it don't already exists.
        *
-       * @param frame Frame with associated landmark obersvations.
+       * @param point Point to add.
        * @return true on success.
        * @return false on failure.
        */
-      bool addLandmarks(const FramePtr &frame);
+      bool addLandmark(const PointPtr &point);
 
       /**
-       * @brief Add new landmark observations, i.e. reprojection factors between
+       * @brief Add new landmark observation, i.e. reprojection factors between
        * frame node and landmark node.
        *
-       * @param frame Frame with landmark oberservations to add.
+       * @param frame Frame with landmark oberservation to add.
+       * @param kp_idx Index of keypoint to add.
        * @return true on success.
        * @return false on failure. (e.g. if the frame id or landmark id is not a node)
        */
-      bool addObservations(const FramePtr &frame);
+      bool addObservation(const FramePtr &frame, size_t kp_idx);
 
       /**
        * @brief Removes landmark observation from factor graph.
