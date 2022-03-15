@@ -142,6 +142,15 @@ namespace svo
 
       bool optimize();
 
+      /**
+       * @brief Checks if a point with id is in the iSAM2 estimator.
+       *
+       * @param id Id of point to check.
+       * @return true if it is in the estimator.
+       * @return false if it is not in the estimator.
+       */
+      bool isPointInEstimator(const int id);
+
     protected: // members
       std::shared_ptr<gtsam::ISAM2> isam_;
       std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;
