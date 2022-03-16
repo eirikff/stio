@@ -102,7 +102,7 @@ namespace svo
 
       graph_->emplace_shared<
           gtsam::GenericProjectionFactor<gtsam::Pose3, gtsam::Point3, CamParameters::Calibration>>(
-          meas, noise, X(frame->bundleId()), L(p->id()), cam_params_->K);
+          meas, noise, X(frame->bundleId()), L(p->id()), cam_params_->K, cam_params_->T_C_B);
 
       return true;
     }
