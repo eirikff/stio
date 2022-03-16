@@ -11,6 +11,7 @@ namespace svo
   namespace gtsam_backend
   {
     Estimator::Estimator()
+        : prev_kf_bundle_id_(-1) // -1 indicate no previous bundle id
     {
       gtsam::ISAM2Params isam_params;
       isam_ = std::make_shared<gtsam::ISAM2>(isam_params);
@@ -72,10 +73,12 @@ namespace svo
         if (prev_timestamp == 0)
         {
           prev_timestamp = m.timestamp_;
+          VLOG(6) << "addImuMeasurements: Set previous timestamp to " << prev_timestamp;
         }
 
         double dt = m.timestamp_ - prev_timestamp;
         prev_timestamp = m.timestamp_;
+        VLOG(6) << "addImuMeasurements: dt = " << dt;
 
         preint_->integrateMeasurement(m.linear_acceleration_, m.angular_velocity_, dt);
       }
@@ -115,6 +118,11 @@ namespace svo
 
     bool Estimator::getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias)
     {
+      // TODO: the kf_id is not guaranteed to be a keyframe and thus not guaranteed to
+      //       be in the factor graph. is it possible to use the imu measurements to
+      //       interpolate the speed and bias between two keyframes? could alternatively be
+      //       just a simple linear interpolation
+
       // TODO: measure speed of this and consider if it should be cached somewhere.
       gtsam::Vector3 speed = isam_->calculateEstimate<gtsam::Vector3>(V(kf_id));
       gtsam::Vector6 bias = isam_->calculateEstimate<gtsam::Vector6>(B(kf_id));
@@ -126,6 +134,11 @@ namespace svo
 
     bool Estimator::getT_WS(const BundleId &kf_id, Transformation &T_WS)
     {
+      // TODO: the kf_id is not guaranteed to be a keyframe and thus not guaranteed to
+      //       be in the factor graph. is it possible to use the imu measurements to
+      //       interpolate the pose between two keyframes? could alternatively be
+      //       just a simple linear interpolation
+
       // TODO: measure speed of this and consider if it should be cached somewhere.
       gtsam::Pose3 pose = isam_->calculateEstimate<gtsam::Pose3>(X(kf_id));
       T_WS = Transformation(pose.matrix());
@@ -144,10 +157,24 @@ namespace svo
     bool Estimator::optimize()
     {
 
+      isam_->update(*graph_, initial_estimate_, remove_factors_);
+      isam_->update();
+
+      latest_results_ = isam_->calculateEstimate();
+
+      graph_->resize(0);
+      initial_estimate_.clear();
+      remove_factors_.clear();
+      preint_->resetIntegrationAndSetBias(prev_bias);
+
+      prev_state = gtsam::NavState(latest_results_.at<gtsam::Pose3>(X(prev_kf_bundle_id_)),
+                                   latest_results_.at<gtsam::Vector3>(V(prev_kf_bundle_id_)));
+      prev_bias = latest_results_.at<gtsam::imuBias::ConstantBias>(B(prev_kf_bundle_id_));
+
       return true;
     }
 
-    bool Estimator::isPointInEstimator(const int id)
+    bool Estimator::isLandmarkInEstimator(const int id)
     {
       if (isam_->valueExists(L(id)))
       {
@@ -155,6 +182,24 @@ namespace svo
       }
 
       return false;
+    }
+
+    bool Estimator::addPreintFactor(const BundleId &kf_id)
+    {
+      gtsam::CombinedImuFactor imu_factor(
+          X(prev_kf_bundle_id_), V(prev_kf_bundle_id_),
+          X(kf_id), V(kf_id),
+          B(prev_kf_bundle_id_), B(kf_id),
+          *preint_);
+      graph_->add(imu_factor);
+      prev_kf_bundle_id_ = kf_id;
+
+      gtsam::NavState prop_state = preint_->predict(prev_state, prev_bias);
+      initial_estimate_.insert(X(kf_id), prop_state.pose());
+      initial_estimate_.insert(V(kf_id), prop_state.velocity());
+      initial_estimate_.insert(B(kf_id), prev_bias);
+
+      return true;
     }
 
   } // namespace gtsam_backend

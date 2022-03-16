@@ -197,12 +197,14 @@ namespace svo
       }
     }
 
+    bool is_keyframe = false;
     // TODO: don't care about stereo, so frame_bundle should only have one single
     //       image. could/should this loop be remove?
     for (const FramePtr &frame : *frame_bundle)
     {
       if (frame->isKeyframe())
       {
+        is_keyframe = true;
         active_keyframes_.push_back(frame);
         // adds landmarks not already in the factor graph to the FC
         // also adds observations (reprojection factors) for the landmarks
@@ -217,11 +219,15 @@ namespace svo
         //       seem to also add observations from the non-keyframe frames, but
         //       how can this be done in the factor graph when one observations =
         //       one factor?
+        //       Perhaps the remaining observations should not be added so the
+        //       graph doesn't grow too large?
       }
     }
 
-    // TODO: imu preintegration should be added to the factor graph here if
-    //       the frame in the frame bundle is a keyframe
+    if (is_keyframe)
+    {
+      backend_.addPreintFactor(frame_bundle->getBundleId());
+    }
 
     last_added_nframe_images_ = frame_bundle->getBundleId();
     last_added_frame_stamp_ns_ = frame_bundle->getMinTimestampNanoseconds();
@@ -418,7 +424,7 @@ namespace svo
         continue;
       }
 
-      if (backend_.isPointInEstimator(point->id()))
+      if (backend_.isLandmarkInEstimator(point->id()))
       {
         if (!backend_.addObservation(frame, i))
         {

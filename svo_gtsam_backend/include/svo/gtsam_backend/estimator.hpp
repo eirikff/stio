@@ -151,13 +151,22 @@ namespace svo
       bool optimize();
 
       /**
-       * @brief Checks if a point with id is in the iSAM2 estimator.
+       * @brief Checks if a landmark with id is in the iSAM2 estimator.
        *
-       * @param id Id of point to check.
+       * @param id Id of landmark/point to check.
        * @return true if it is in the estimator.
        * @return false if it is not in the estimator.
        */
-      bool isPointInEstimator(const int id);
+      bool isLandmarkInEstimator(const int id);
+
+      /**
+       * @brief
+       *
+       * @param kf_id
+       * @return true
+       * @return false
+       */
+      bool addPreintFactor(const BundleId &kf_id);
 
     protected: // members
       std::shared_ptr<gtsam::ISAM2> isam_;
@@ -167,6 +176,12 @@ namespace svo
       std::shared_ptr<gtsam::PreintegratedCombinedMeasurements> preint_;
       gtsam::Values initial_estimate_;
       gtsam::Values latest_results_;
+      gtsam::FactorIndices remove_factors_;
+
+      // for preintegration factor
+      BundleId prev_kf_bundle_id_;
+      gtsam::NavState prev_state;
+      gtsam::imuBias::ConstantBias prev_bias;
 
     protected: // functions
     };
