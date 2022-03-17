@@ -351,9 +351,8 @@ namespace svo
     LOG(INFO) << "Optimization thread ended.";
   }
 
-  bool GtsamBackendInterface::getImuMeasurements(double timestamp_ns)
+  bool GtsamBackendInterface::getImuMeasurements(double timestamp_s)
   {
-    double timestamp_s = timestamp_ns * common::conversions::kNanoSecondsToSeconds;
     if (!imu_handler_->waitTill(timestamp_s))
     {
       return false;
@@ -365,7 +364,7 @@ namespace svo
     {
       LOG(ERROR) << "Could not retrieve IMU measurements."
                  << " Last frame was at " << last_added_frame_stamp_ns_
-                 << ", current is at " << timestamp_ns;
+                 << ", current is at " << timestamp_s;
       return false;
     }
 

@@ -244,11 +244,11 @@ namespace svo
      * @brief Get the latest IMU measurements from imu_handler_ up to the timestamp
      * and save them to latest_imu_meas_.
      *
-     * @param timestamp_ns Timestamp of frame.
+     * @param timestamp_s Timestamp of frame in seconds.
      * @return true On success.
      * @return false On failure.
      */
-    bool getImuMeasurements(double timestamp_ns);
+    bool getImuMeasurements(double timestamp_s);
 
     /**
      * @brief Get the latest estimate from the backend and set the frame bundle's
