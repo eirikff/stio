@@ -96,10 +96,26 @@ namespace svo
       GtsamBackendOptions backend_options;
       MotionDetectorOptions motion_detection_options;
 
+      options.use_outlier_rejection = false;
+      options.use_zero_motion_detection = false;
+
       gtsam_backend_interface_ = std::make_shared<GtsamBackendInterface>(
           options, backend_options, motion_detection_options, ncam_);
 
-      LOG(FATAL) << "GTSAM Backend not implemented yet.";
+      if (imu_handler_)
+      {
+        svo_->setBundleAdjuster(gtsam_backend_interface_);
+        gtsam_backend_interface_->setImuHandler(imu_handler_);
+        // gtsam_backend_interface_->makePublisher();
+      }
+      else
+      {
+        SVO_ERROR_STREAM("Cannot use GTSAM backend without using imu");
+      }
+    }
+    else
+    {
+      LOG(FATAL) << "Unknown backend type '" << backendType << "'";
     }
 
     if (vk::param<bool>(pnh_, "runlc", false))

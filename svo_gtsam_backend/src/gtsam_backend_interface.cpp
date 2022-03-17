@@ -30,8 +30,6 @@ namespace svo
     }
 
     backend_.addCamParams(camera_bundle);
-
-    LOG(FATAL) << "Constructor for GtsamBackendInterface not implemented yet.";
   }
 
   GtsamBackendInterface::~GtsamBackendInterface()
