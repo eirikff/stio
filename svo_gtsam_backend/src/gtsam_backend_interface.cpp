@@ -47,6 +47,8 @@ namespace svo
   {
     bool success;
 
+    VLOG(6) << "loadMapFromBundleAdjustment: new_frames' bundle id: " << new_frames->getBundleId() << "  last_frames' bundle id: " << last_frames->getBundleId();
+
     if (stop_thread_)
     {
       return;
@@ -233,6 +235,11 @@ namespace svo
     wait_condition_.notify_one();
   }
 
+  void GtsamBackendInterface::addInitialPrior()
+  {
+    backend_.addInitialPrior();
+  }
+
   void GtsamBackendInterface::reset()
   {
     LOG(ERROR) << "GtsamBackendInterface::reset() is not implemented.";
@@ -367,6 +374,8 @@ namespace svo
                  << ", current is at " << timestamp_s;
       return false;
     }
+
+    VLOG(6) << "Got " << latest_imu_meas_.size() << " IMU measurements from imu_handler_.";
 
     return true;
   }

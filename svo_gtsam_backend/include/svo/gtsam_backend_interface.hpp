@@ -104,6 +104,14 @@ namespace svo
     void bundleAdjustment(const FrameBundlePtr &frame_bundle) override;
 
     /**
+     * @brief Add prior to set the origin.
+     *
+     * TODO: this function should take initial pose, velocity and bias as arguments.
+     *
+     */
+    void addInitialPrior();
+
+    /**
      * @brief Reset the backend: NOT IMPLEMENTED
      */
     void reset() override;

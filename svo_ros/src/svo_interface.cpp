@@ -102,6 +102,9 @@ namespace svo
       gtsam_backend_interface_ = std::make_shared<GtsamBackendInterface>(
           options, backend_options, motion_detection_options, ncam_);
 
+      gtsam_backend_interface_->addInitialPrior();
+      gtsam_backend_interface_->startThread();
+
       if (imu_handler_)
       {
         svo_->setBundleAdjuster(gtsam_backend_interface_);

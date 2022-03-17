@@ -11,12 +11,40 @@ namespace svo
   namespace gtsam_backend
   {
     Estimator::Estimator()
-        : prev_kf_bundle_id_(-1) // -1 indicate no previous bundle id
+        : prev_kf_bundle_id_(0)
     {
       gtsam::ISAM2Params isam_params;
       isam_ = std::make_shared<gtsam::ISAM2>(isam_params);
 
       graph_ = std::make_shared<gtsam::NonlinearFactorGraph>();
+    }
+
+    void Estimator::addInitialPrior()
+    {
+      // Add origin prior to first pose
+      // TODO: load these values from config
+      // TODO: load prior noise sigmas from config
+      auto pose_prior_noise = gtsam::noiseModel::Diagonal::Sigmas(
+          (gtsam::Vector(6) << 0.01, 0.01, 0.01, 0.1, 0.1, 0.1).finished() // rad, rad, rad, m, m, m
+      );
+      auto vel_prior_noise = gtsam::noiseModel::Isotropic::Sigma(3, 0.1);
+      auto bias_prior_noise = gtsam::noiseModel::Isotropic::Sigma(6, 1e-3);
+
+      graph_->addPrior(X(0), gtsam::Pose3(), pose_prior_noise);
+      graph_->addPrior(V(0), gtsam::Vector3(), vel_prior_noise);
+      graph_->addPrior(B(0), gtsam::imuBias::ConstantBias(), bias_prior_noise);
+
+      initial_estimate_.insert(X(0), gtsam::Pose3());
+      initial_estimate_.insert(V(0), gtsam::Vector3());
+      initial_estimate_.insert(B(0), gtsam::imuBias::ConstantBias());
+
+      isam_->update(*graph_, initial_estimate_);
+      latest_results_ = isam_->calculateEstimate();
+
+      graph_->resize(0);
+      initial_estimate_.clear();
+
+      VLOG(3) << "Added initial priors to GTSAM backend.";
     }
 
     void Estimator::addImuParams(const gtsam_backend::ImuParameters::shared_ptr params)
@@ -78,10 +106,12 @@ namespace svo
 
         double dt = m.timestamp_ - prev_timestamp;
         prev_timestamp = m.timestamp_;
-        VLOG(6) << "addImuMeasurements: dt = " << dt;
+        VLOG(8) << "addImuMeasurements: dt = " << dt;
 
         preint_->integrateMeasurement(m.linear_acceleration_, m.angular_velocity_, dt);
       }
+
+      VLOG(6) << "addImuMeasurements: Added " << meas.size() << " measurements to preintegrator.";
 
       return true;
     }

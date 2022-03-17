@@ -74,6 +74,8 @@ namespace svo
     public: // functions
       Estimator();
 
+      void addInitialPrior();
+
       void addImuParams(const gtsam_backend::ImuParameters::shared_ptr params);
 
       void addCamParams(const CameraBundlePtr &camera_bundle);
