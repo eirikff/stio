@@ -40,8 +40,8 @@ namespace svo
       initial_estimate_.insert(V(0), gtsam::Vector3());
       initial_estimate_.insert(B(0), gtsam::imuBias::ConstantBias());
 
-      isam_->update(*graph_, initial_estimate_);
-      latest_results_ = isam_->calculateEstimate();
+      ifl_->update(*graph_, initial_estimate_);
+      latest_results_ = ifl_->calculateEstimate();
 
       graph_->resize(0);
       initial_estimate_.clear();
