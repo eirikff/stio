@@ -148,7 +148,7 @@ namespace svo
       return false;
     }
 
-    bool Estimator::getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias)
+    bool Estimator::getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias) const
     {
       // TODO: the kf_id is not guaranteed to be a keyframe and thus not guaranteed to
       //       be in the factor graph. is it possible to use the imu measurements to
@@ -164,7 +164,7 @@ namespace svo
       return true;
     }
 
-    bool Estimator::getT_WS(const BundleId &kf_id, Transformation &T_WS)
+    bool Estimator::getT_WS(const BundleId &kf_id, Transformation &T_WS) const
     {
       // TODO: the kf_id is not guaranteed to be a keyframe and thus not guaranteed to
       //       be in the factor graph. is it possible to use the imu measurements to
@@ -206,7 +206,7 @@ namespace svo
       return true;
     }
 
-    bool Estimator::isLandmarkInEstimator(const int id)
+    bool Estimator::isLandmarkInEstimator(const int id) const
     {
       try
       {

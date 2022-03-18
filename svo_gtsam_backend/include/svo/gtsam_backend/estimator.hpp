@@ -141,7 +141,7 @@ namespace svo
        * @return true on success.
        * @return false on failure.
        */
-      bool getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias);
+      bool getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias) const;
 
       /**
        * @brief Get the pose T_WS (world to sensor/imu) at node for keyframe with
@@ -152,7 +152,7 @@ namespace svo
        * @return true on success.
        * @return false on failure.
        */
-      bool getT_WS(const BundleId &kf_id, Transformation &T_WS);
+      bool getT_WS(const BundleId &kf_id, Transformation &T_WS) const;
 
       /**
        * @brief Add velocity prior to node of keyframe with id kf_id.
@@ -174,7 +174,7 @@ namespace svo
        * @return true if it is in the estimator.
        * @return false if it is not in the estimator.
        */
-      bool isLandmarkInEstimator(const int id);
+      bool isLandmarkInEstimator(const int id) const;
 
       /**
        * @brief
