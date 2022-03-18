@@ -10,11 +10,13 @@ namespace svo
 {
   namespace gtsam_backend
   {
-    Estimator::Estimator()
-        : prev_kf_bundle_id_(0)
+    Estimator::Estimator(double smoother_lag)
+        : prev_kf_bundle_id_(0),
+          smoother_lag_(smoother_lag)
     {
       gtsam::ISAM2Params isam_params;
-      isam_ = std::make_shared<gtsam::ISAM2>(isam_params);
+      // isam_ = std::make_shared<gtsam::ISAM2>(isam_params);
+      ifl_ = std::make_shared<gtsam::IncrementalFixedLagSmoother>(smoother_lag_, isam_params);
 
       graph_ = std::make_shared<gtsam::NonlinearFactorGraph>();
     }
@@ -154,8 +156,8 @@ namespace svo
       //       just a simple linear interpolation
 
       // TODO: measure speed of this and consider if it should be cached somewhere.
-      gtsam::Vector3 speed = isam_->calculateEstimate<gtsam::Vector3>(V(kf_id));
-      gtsam::Vector6 bias = isam_->calculateEstimate<gtsam::Vector6>(B(kf_id));
+      gtsam::Vector3 speed = ifl_->calculateEstimate<gtsam::Vector3>(V(kf_id));
+      gtsam::Vector6 bias = ifl_->calculateEstimate<gtsam::Vector6>(B(kf_id));
       speed_and_bias.head<3>(0) = speed;
       speed_and_bias.head<6>(3) = bias;
 
@@ -170,7 +172,7 @@ namespace svo
       //       just a simple linear interpolation
 
       // TODO: measure speed of this and consider if it should be cached somewhere.
-      gtsam::Pose3 pose = isam_->calculateEstimate<gtsam::Pose3>(X(kf_id));
+      gtsam::Pose3 pose = ifl_->calculateEstimate<gtsam::Pose3>(X(kf_id));
       T_WS = Transformation(pose.matrix());
 
       return true;
@@ -187,10 +189,10 @@ namespace svo
     bool Estimator::optimize()
     {
 
-      isam_->update(*graph_, initial_estimate_, remove_factors_);
-      isam_->update();
+      ifl_->update(*graph_, initial_estimate_, key_timestamp_map_, remove_factors_);
+      ifl_->update();
 
-      latest_results_ = isam_->calculateEstimate();
+      latest_results_ = ifl_->calculateEstimate();
 
       graph_->resize(0);
       initial_estimate_.clear();
@@ -206,12 +208,16 @@ namespace svo
 
     bool Estimator::isLandmarkInEstimator(const int id)
     {
-      if (isam_->valueExists(L(id)))
+      try
       {
-        return true;
+        ifl_->getFactors().at(L(id));
+      }
+      catch (const std::out_of_range &e)
+      {
+        return false;
       }
 
-      return false;
+      return true;
     }
 
     bool Estimator::addPreintFactor(const BundleId &kf_id)

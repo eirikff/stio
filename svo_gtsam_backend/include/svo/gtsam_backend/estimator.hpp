@@ -11,6 +11,9 @@
 #include <gtsam/geometry/Cal3DS2.h>
 #include <gtsam/inference/Symbol.h>
 
+#include <gtsam_unstable/nonlinear/FixedLagSmoother.h>
+#include <gtsam_unstable/nonlinear/IncrementalFixedLagSmoother.h>
+
 #include <svo/global.h>
 #include <svo/vio_common/backend_types.hpp>
 #include <svo/common/imu_calibration.h>
@@ -72,7 +75,19 @@ namespace svo
       double reinit_timestamp_start_;
 
     public: // functions
-      Estimator();
+      /**
+       * @brief Default constructor.
+       *
+       */
+      Estimator() : smoother_lag_(5) {}
+
+      /**
+       * @brief Construct a new Estimator object.
+       *
+       * @param smoother_lag The lag in seconds (TODO: verify seconds) to keep
+       * variables, i.e. keep the variables newer than `smoother_lag` seconds.
+       */
+      Estimator(double smoother_lag);
 
       void addInitialPrior();
 
@@ -172,6 +187,7 @@ namespace svo
 
     protected: // members
       std::shared_ptr<gtsam::ISAM2> isam_;
+      std::shared_ptr<gtsam::IncrementalFixedLagSmoother> ifl_;
       std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
       gtsam_backend::CamParameters::shared_ptr cam_params_;
@@ -179,11 +195,14 @@ namespace svo
       gtsam::Values initial_estimate_;
       gtsam::Values latest_results_;
       gtsam::FactorIndices remove_factors_;
+      gtsam::FixedLagSmootherKeyTimestampMap key_timestamp_map_;
 
       // for preintegration factor
       BundleId prev_kf_bundle_id_;
       gtsam::NavState prev_state;
       gtsam::imuBias::ConstantBias prev_bias;
+
+      double smoother_lag_;
 
     protected: // functions
     };
