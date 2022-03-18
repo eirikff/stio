@@ -14,7 +14,7 @@ namespace svo
       const GtsamBackendOptions &backend_options,
       const MotionDetectorOptions &motion_detector_options,
       const CameraBundlePtr &camera_bundle)
-      : options_(options), backend_options_(backend_options)
+      : options_(options), backend_options_(backend_options), backend_(5) // TODO: make smoother lag parameter
   {
     type_ = BundleAdjustmentType::kGtsam;
 
