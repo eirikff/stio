@@ -186,8 +186,8 @@ namespace svo
       bool addPreintFactor(const BundleId &kf_id);
 
     protected: // members
-      std::shared_ptr<gtsam::ISAM2> isam_;
-      std::shared_ptr<gtsam::IncrementalFixedLagSmoother> ifl_;
+      // std::shared_ptr<gtsam::ISAM2> estimator_;
+      std::shared_ptr<gtsam::IncrementalFixedLagSmoother> estimator_;
       std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
       gtsam_backend::CamParameters::shared_ptr cam_params_;

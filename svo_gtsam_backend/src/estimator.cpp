@@ -16,7 +16,7 @@ namespace svo
     {
       gtsam::ISAM2Params isam_params;
       // isam_ = std::make_shared<gtsam::ISAM2>(isam_params);
-      ifl_ = std::make_shared<gtsam::IncrementalFixedLagSmoother>(smoother_lag_, isam_params);
+      estimator_ = std::make_shared<gtsam::IncrementalFixedLagSmoother>(smoother_lag_, isam_params);
 
       graph_ = std::make_shared<gtsam::NonlinearFactorGraph>();
     }
@@ -40,8 +40,8 @@ namespace svo
       initial_estimate_.insert(V(0), gtsam::Vector3());
       initial_estimate_.insert(B(0), gtsam::imuBias::ConstantBias());
 
-      ifl_->update(*graph_, initial_estimate_);
-      latest_results_ = ifl_->calculateEstimate();
+      estimator_->update(*graph_, initial_estimate_);
+      latest_results_ = estimator_->calculateEstimate();
 
       graph_->resize(0);
       initial_estimate_.clear();
@@ -156,8 +156,8 @@ namespace svo
       //       just a simple linear interpolation
 
       // TODO: measure speed of this and consider if it should be cached somewhere.
-      gtsam::Vector3 speed = ifl_->calculateEstimate<gtsam::Vector3>(V(kf_id));
-      gtsam::Vector6 bias = ifl_->calculateEstimate<gtsam::Vector6>(B(kf_id));
+      gtsam::Vector3 speed = estimator_->calculateEstimate<gtsam::Vector3>(V(kf_id));
+      gtsam::Vector6 bias = estimator_->calculateEstimate<gtsam::Vector6>(B(kf_id));
       speed_and_bias.head<3>(0) = speed;
       speed_and_bias.head<6>(3) = bias;
 
@@ -172,7 +172,7 @@ namespace svo
       //       just a simple linear interpolation
 
       // TODO: measure speed of this and consider if it should be cached somewhere.
-      gtsam::Pose3 pose = ifl_->calculateEstimate<gtsam::Pose3>(X(kf_id));
+      gtsam::Pose3 pose = estimator_->calculateEstimate<gtsam::Pose3>(X(kf_id));
       T_WS = Transformation(pose.matrix());
 
       return true;
@@ -189,10 +189,10 @@ namespace svo
     bool Estimator::optimize()
     {
 
-      ifl_->update(*graph_, initial_estimate_, key_timestamp_map_, remove_factors_);
-      ifl_->update();
+      estimator_->update(*graph_, initial_estimate_, key_timestamp_map_, remove_factors_);
+      estimator_->update();
 
-      latest_results_ = ifl_->calculateEstimate();
+      latest_results_ = estimator_->calculateEstimate();
 
       graph_->resize(0);
       initial_estimate_.clear();
@@ -210,7 +210,7 @@ namespace svo
     {
       try
       {
-        ifl_->getFactors().at(L(id));
+        estimator_->getFactors().at(L(id));
       }
       catch (const std::out_of_range &e)
       {
