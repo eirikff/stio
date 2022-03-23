@@ -1,4 +1,4 @@
-SET(CMAKE_BUILD_TYPE Release) # Release, RelWithDebInfo
+SET(CMAKE_BUILD_TYPE Debug) # Release, RelWithDebInfo
 #SET(CMAKE_BUILD_TYPE Debug) # Release, RelWithDebInfo
 SET(CMAKE_VERBOSE_MAKEFILE OFF)
 
