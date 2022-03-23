@@ -4,6 +4,8 @@
 #include <svo/common/point.h>
 #include <svo/common/frame.h>
 
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
+
 #include <iostream>
 
 namespace svo
@@ -11,12 +13,8 @@ namespace svo
   namespace gtsam_backend
   {
     Estimator::Estimator()
-        : prev_kf_bundle_id_(-1) // -1 indicate no previous bundle id
+        : last_kf_bundle_id_(-1)
     {
-      gtsam::ISAM2Params isam_params;
-      isam_ = std::make_shared<gtsam::ISAM2>(isam_params);
-
-      graph_ = std::make_shared<gtsam::NonlinearFactorGraph>();
     }
 
     void Estimator::addImuParams(const gtsam_backend::ImuParameters::shared_ptr params)
@@ -90,7 +88,7 @@ namespace svo
     {
       int id = point->id();
 
-      initial_estimate_.insert(L(id), point->pos());
+      initial_values_.insert(L(id), point->pos());
 
       return true;
     }
@@ -103,7 +101,7 @@ namespace svo
       //  TODO: make noise sigma value parameter/option
       auto noise = gtsam::noiseModel::Isotropic::Sigma(2, 1);
 
-      graph_->emplace_shared<
+      graph_.emplace_shared<
           gtsam::GenericProjectionFactor<gtsam::Pose3, gtsam::Point3, CamParameters::Calibration>>(
           meas, noise, X(frame->bundleId()), L(p->id()), cam_params_->K, cam_params_->T_C_B);
 
@@ -124,8 +122,8 @@ namespace svo
       //       just a simple linear interpolation
 
       // TODO: measure speed of this and consider if it should be cached somewhere.
-      gtsam::Vector3 speed = isam_->calculateEstimate<gtsam::Vector3>(V(kf_id));
-      gtsam::Vector6 bias = isam_->calculateEstimate<gtsam::Vector6>(B(kf_id));
+      gtsam::Vector3 speed = result_.at<gtsam::Vector3>(V(kf_id));
+      gtsam::Vector6 bias = result_.at<gtsam::Vector6>(B(kf_id));
       speed_and_bias.head<3>(0) = speed;
       speed_and_bias.head<6>(3) = bias;
 
@@ -140,7 +138,7 @@ namespace svo
       //       just a simple linear interpolation
 
       // TODO: measure speed of this and consider if it should be cached somewhere.
-      gtsam::Pose3 pose = isam_->calculateEstimate<gtsam::Pose3>(X(kf_id));
+      gtsam::Pose3 pose = result_.at<gtsam::Pose3>(X(kf_id));
       T_WS = Transformation(pose.matrix());
 
       return true;
@@ -149,55 +147,55 @@ namespace svo
     bool Estimator::addVelocityPrior(const BundleId &kf_id, const Eigen::Vector3d &value, double sigma)
     {
       auto noise_model = gtsam::noiseModel::Isotropic::Sigma(3, sigma);
-      graph_->addPrior(V(kf_id), value, noise_model);
+      graph_.addPrior(V(kf_id), value, noise_model);
 
       return true;
     }
 
     bool Estimator::optimize()
     {
+      gtsam::LevenbergMarquardtParams param;
+      param.setVerbosityLM("SUMMARY");
+      gtsam::LevenbergMarquardtOptimizer optimizer(graph_, initial_values_, param);
+      result_ = optimizer.optimize();
 
-      isam_->update(*graph_, initial_estimate_, remove_factors_);
-      isam_->update();
+      prev_state = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_kf_bundle_id_)),
+                                   result_.at<gtsam::Vector3>(V(last_kf_bundle_id_)));
+      prev_bias = result_.at<gtsam::imuBias::ConstantBias>(B(last_kf_bundle_id_));
 
-      latest_results_ = isam_->calculateEstimate();
-
-      graph_->resize(0);
-      initial_estimate_.clear();
-      remove_factors_.clear();
       preint_->resetIntegrationAndSetBias(prev_bias);
-
-      prev_state = gtsam::NavState(latest_results_.at<gtsam::Pose3>(X(prev_kf_bundle_id_)),
-                                   latest_results_.at<gtsam::Vector3>(V(prev_kf_bundle_id_)));
-      prev_bias = latest_results_.at<gtsam::imuBias::ConstantBias>(B(prev_kf_bundle_id_));
 
       return true;
     }
 
     bool Estimator::isLandmarkInEstimator(const int id)
     {
-      if (isam_->valueExists(L(id)))
+      try
       {
-        return true;
+        graph_.at(L(id));
+      }
+      catch (const std::out_of_range &e)
+      {
+        return false;
       }
 
-      return false;
+      return true;
     }
 
     bool Estimator::addPreintFactor(const BundleId &kf_id)
     {
       gtsam::CombinedImuFactor imu_factor(
-          X(prev_kf_bundle_id_), V(prev_kf_bundle_id_),
+          X(last_kf_bundle_id_), V(last_kf_bundle_id_),
           X(kf_id), V(kf_id),
-          B(prev_kf_bundle_id_), B(kf_id),
+          B(last_kf_bundle_id_), B(kf_id),
           *preint_);
-      graph_->add(imu_factor);
-      prev_kf_bundle_id_ = kf_id;
+      graph_.add(imu_factor);
+      last_kf_bundle_id_ = kf_id;
 
       gtsam::NavState prop_state = preint_->predict(prev_state, prev_bias);
-      initial_estimate_.insert(X(kf_id), prop_state.pose());
-      initial_estimate_.insert(V(kf_id), prop_state.velocity());
-      initial_estimate_.insert(B(kf_id), prev_bias);
+      initial_values_.insert(X(kf_id), prop_state.pose());
+      initial_values_.insert(V(kf_id), prop_state.velocity());
+      initial_values_.insert(B(kf_id), prev_bias);
 
       return true;
     }

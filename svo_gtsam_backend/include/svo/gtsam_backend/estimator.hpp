@@ -169,17 +169,15 @@ namespace svo
       bool addPreintFactor(const BundleId &kf_id);
 
     protected: // members
-      std::shared_ptr<gtsam::ISAM2> isam_;
-      std::shared_ptr<gtsam::NonlinearFactorGraph> graph_;
+      gtsam::NonlinearFactorGraph graph_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
       gtsam_backend::CamParameters::shared_ptr cam_params_;
       std::shared_ptr<gtsam::PreintegratedCombinedMeasurements> preint_;
-      gtsam::Values initial_estimate_;
-      gtsam::Values latest_results_;
-      gtsam::FactorIndices remove_factors_;
+      gtsam::Values initial_values_;
+      gtsam::Values result_;
 
       // for preintegration factor
-      BundleId prev_kf_bundle_id_;
+      BundleId last_kf_bundle_id_;
       gtsam::NavState prev_state;
       gtsam::imuBias::ConstantBias prev_bias;
 
