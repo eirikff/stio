@@ -3,7 +3,7 @@
   <arg name="calib_file" default="$(find svo_ros)/param/calib/euroc_mono.yaml"/>
 
   <!-- SVO node -->
-  <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" args="--v=0" launch-prefix="gdb --args" >
+  <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" args="--v=0" >
     <env name="GLOG_logtostderr" value="1" />
 
     <!-- Camera topic to subscribe to -->
