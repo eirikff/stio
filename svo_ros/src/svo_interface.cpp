@@ -181,7 +181,7 @@ namespace svo
       }
       else if (backendType == "gtsam")
       {
-        LOG(FATAL) << "GTSAM backend not implemented yet.";
+        LOG(FATAL) << "GTSAM backend should already be created. If not, something wrong happened.";
       }
     }
     svo_->addImageBundle(images, timestamp_nanoseconds);
