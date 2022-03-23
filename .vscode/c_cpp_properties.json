@@ -31,9 +31,7 @@
                 "${workspaceFolder}/../opengv/include/**"
             ],
             "defines": [
-                "SVO_USE_OPENGV",
-                "STIO_USE_16BIT_IMAGE",
-                "STIO_USE_16BIT_DETECTION"
+                "SVO_USE_OPENGV"
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",
