@@ -114,7 +114,7 @@ namespace svo
       return false;
     }
 
-    bool Estimator::getSpeedAndBias(const BundleId &bid, SpeedAndBias &speed_and_bias)
+    bool Estimator::getSpeedAndBias(const BundleId &bid, SpeedAndBias &speed_and_bias) const
     {
       gtsam::Vector3 speed;
       gtsam::imuBias::ConstantBias bias;
@@ -147,7 +147,7 @@ namespace svo
       return true;
     }
 
-    bool Estimator::getT_WS(const BundleId &bid, Transformation &T_WS)
+    bool Estimator::getT_WS(const BundleId &bid, Transformation &T_WS) const
     {
       gtsam::Pose3 pose;
       try
@@ -199,7 +199,7 @@ namespace svo
       return true;
     }
 
-    bool Estimator::isLandmarkInEstimator(const int id)
+    bool Estimator::isLandmarkInEstimator(const int id) const
     {
       try
       {
