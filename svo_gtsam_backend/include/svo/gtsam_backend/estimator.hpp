@@ -119,7 +119,7 @@ namespace svo
       /**
        * @brief Get the speed and bias estimates from the backend.
        *
-       * @param kf_id Id of keyframe/node to get estimate from.
+       * @param bid Bundle id to get value for.
        * @param speed_and_bias Speed and bias estimate output.
        * @return true on success.
        * @return false on failure.
@@ -127,15 +127,15 @@ namespace svo
       bool getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias);
 
       /**
-       * @brief Get the pose T_WS (world to sensor/imu) at node for keyframe with
-       * id kf_id.
+       * @brief Get the pose T_WS (world to sensor/imu) at node for frame with
+       * bundle id bid.
        *
-       * @param kf_id Id of keyframe.
+       * @param bid Bundle id to get value for.
        * @param T_WS Output variable for result.
        * @return true on success.
        * @return false on failure.
        */
-      bool getT_WS(const BundleId &kf_id, Transformation &T_WS);
+      bool getT_WS(const BundleId &bid, Transformation &T_WS);
 
       /**
        * @brief Add velocity prior to node of keyframe with id kf_id.

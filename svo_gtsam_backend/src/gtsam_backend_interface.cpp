@@ -375,16 +375,27 @@ namespace svo
     BundleId bid = new_frames->getBundleId();
 
     Transformation T_WS;
-    bool success = backend_.getT_WS(bid, T_WS);
-    new_frames->set_T_W_B(T_WS);
+    bool success_T_WS = backend_.getT_WS(bid, T_WS);
+    if (!success_T_WS)
+    {
+      LOG(WARNING) << "Could not get T_WS for bundle id " << bid;
+    }
 
     gtsam_backend::SpeedAndBias speed_and_bias;
-    success = backend_.getSpeedAndBias(bid, speed_and_bias);
+    bool success_speedbias = backend_.getSpeedAndBias(bid, speed_and_bias);
+    if (!success_speedbias)
+    {
+      LOG(WARNING) << "Could not get speed and bias for bundle id " << bid;
+    }
+
+    if (!success_T_WS || !success_speedbias)
+      return false;
+
+    new_frames->set_T_W_B(T_WS);
     // TODO: why are we rotating by velocity? taken from ceres backend
     new_frames->setIMUState(T_WS.getRotation().rotate(speed_and_bias.block<3, 1>(0, 0)),
                             speed_and_bias.block<3, 1>(3, 0),
                             speed_and_bias.block<3, 1>(6, 0));
-
     return true;
   }
 

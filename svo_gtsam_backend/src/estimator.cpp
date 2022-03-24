@@ -114,31 +114,62 @@ namespace svo
       return false;
     }
 
-    bool Estimator::getSpeedAndBias(const BundleId &kf_id, SpeedAndBias &speed_and_bias)
+    bool Estimator::getSpeedAndBias(const BundleId &bid, SpeedAndBias &speed_and_bias)
     {
-      // TODO: the kf_id is not guaranteed to be a keyframe and thus not guaranteed to
-      //       be in the factor graph. is it possible to use the imu measurements to
-      //       interpolate the speed and bias between two keyframes? could alternatively be
-      //       just a simple linear interpolation
+      gtsam::Vector3 speed;
+      gtsam::imuBias::ConstantBias bias;
+      try
+      {
+        speed = result_.at<gtsam::Vector3>(V(bid));
+        bias = result_.at<gtsam::imuBias::ConstantBias>(B(bid));
 
-      // TODO: measure speed of this and consider if it should be cached somewhere.
-      gtsam::Vector3 speed = result_.at<gtsam::Vector3>(V(kf_id));
-      gtsam::Vector6 bias = result_.at<gtsam::Vector6>(B(kf_id));
-      speed_and_bias.head<3>(0) = speed;
-      speed_and_bias.head<6>(3) = bias;
+        VLOG(6) << "Got speed and bias for bid " << bid << " using results_.";
+      }
+      catch (const gtsam::ValuesKeyDoesNotExist &)
+      {
+        try
+        {
+          speed = predictions_.at<gtsam::Vector3>(V(bid));
+          bias = predictions_.at<gtsam::imuBias::ConstantBias>(B(bid));
+
+          VLOG(6) << "Got speed and bias for bid " << bid << " using predictions_.";
+        }
+        catch (const gtsam::ValuesKeyDoesNotExist &)
+        {
+          LOG(WARNING) << "Failed to get speed and bias for bid " << bid;
+          return false;
+        }
+      }
+      speed_and_bias.segment<3>(0) = speed;
+      speed_and_bias.segment<3>(3) = bias.gyroscope();
+      speed_and_bias.segment<3>(6) = bias.accelerometer();
 
       return true;
     }
 
-    bool Estimator::getT_WS(const BundleId &kf_id, Transformation &T_WS)
+    bool Estimator::getT_WS(const BundleId &bid, Transformation &T_WS)
     {
-      // TODO: the kf_id is not guaranteed to be a keyframe and thus not guaranteed to
-      //       be in the factor graph. is it possible to use the imu measurements to
-      //       interpolate the pose between two keyframes? could alternatively be
-      //       just a simple linear interpolation
+      gtsam::Pose3 pose;
+      try
+      {
+        pose = result_.at<gtsam::Pose3>(X(bid));
 
-      // TODO: measure speed of this and consider if it should be cached somewhere.
-      gtsam::Pose3 pose = result_.at<gtsam::Pose3>(X(kf_id));
+        VLOG(6) << "Got T_WS for bid " << bid << " using results_.";
+      }
+      catch (const gtsam::ValuesKeyDoesNotExist &)
+      {
+        try
+        {
+          pose = predictions_.at<gtsam::Pose3>(X(bid));
+
+          VLOG(6) << "Got T_WS for bid " << bid << " using predictions_.";
+        }
+        catch (const gtsam::ValuesKeyDoesNotExist &)
+        {
+          LOG(WARNING) << "Failed to get T_WS for bid " << bid;
+          return false;
+        }
+      }
       T_WS = Transformation(pose.matrix());
 
       return true;
