@@ -153,14 +153,14 @@ namespace svo
                               const double timestamp) override;
 
     /**
-     * @brief getNumFrames returns the number of frames in backend
+     * @brief getNumFrames returns the number of frames in backend. This is not the
+     * same as number of keyframes.
+     *
      * @return
      */
     inline int getNumFrames() const override
     {
-      // return static_cast<int>(backend_.numFrames());
-      LOG(FATAL) << "Not implemented yet.";
-      return -1;
+      return backend_.getNumFrames();
     }
 
     inline bool isFixedToGlobalMap() const override

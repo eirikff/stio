@@ -69,7 +69,7 @@ namespace svo
 
     // this predicts using the recently added imu measurements and associates the
     // prediction with the new_frames' bundle id
-    backend_.predictWithImu(new_frames->getBundleId());
+    backend_.predictWithImu(new_frames->getBundleId(), new_frames->getMinTimestampSeconds());
 
     // gets the latest estimate from the backend and sets the frame T_W_B.
     // should also update speed and bias of the frame using latest estimate from backend.
@@ -290,12 +290,24 @@ namespace svo
                                                      Transformation *T_WS,
                                                      double *timestamp) const
   {
+    BundleId bid = backend_.getLastAddedBid();
+
+    Transformation T;
+    bool success_T_WS = backend_.getT_WS(bid, T);
+    *T_WS = T;
+
+    gtsam_backend::SpeedAndBias speed_and_bias;
+    bool success_speed_bias = backend_.getSpeedAndBias(bid, speed_and_bias);
+    *speed_bias = speed_and_bias;
+
+    *timestamp = backend_.getTimestampSeconds(bid);
   }
 
   void GtsamBackendInterface::setReinitStartValues(const Eigen::Matrix<double, 9, 1> &sb,
                                                    const Transformation &Tws,
                                                    const double timestamp)
   {
+    LOG(FATAL) << "GtsamBackendInterface::setReinitStartValues: Not implemented.";
   }
 
   void GtsamBackendInterface::optimizationLoop()
