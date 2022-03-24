@@ -195,7 +195,7 @@ namespace svo
     CHECK_NOTNULL(visualizer_.get());
 
     visualizer_->img_caption_.clear();
-    if (svo_->isBackendValid())
+    if (svo_->isBackendValid() && ceres_backend_interface_)
     {
       std::string static_str = ceres_backend_interface_->getStationaryStatusStr();
       visualizer_->img_caption_ = static_str;
