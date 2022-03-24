@@ -371,6 +371,7 @@ namespace svo
 
     // Get measurements, newest is interpolated to exactly match timestamp of
     // frame_bundle
+    latest_imu_meas_.clear();
     if (!imu_handler_->getMeasurementsContainingEdges(timestamp_s, latest_imu_meas_, true))
     {
       LOG(ERROR) << "Could not retrieve IMU measurements."

@@ -64,19 +64,23 @@ namespace svo
 
     bool Estimator::addImuMeasurements(const ImuMeasurements &meas)
     {
-      static double prev_timestamp = 0;
-      for (const ImuMeasurement &m : meas)
+      // The meas arg is a deque with the newest measurements in front and the oldest
+      // in the back. The IMU handler deletes old measurements when they are extracted,
+      // but it seems to keep the two first measurements so that in the next call
+      // the measurements are all new measurements plus the two from last call. To not
+      // add double, we iterate backwards and choose the second element as the previous
+      // timestamp, then add all the *actually new* measurements to the preintegrator.
+      auto first_it = meas.crbegin() + 1;
+      double prev_timestamp = first_it->timestamp_;
+      // Iterate backwards because newest measurements are in front of deque
+      for (auto it = first_it + 1; it != meas.crend(); it++)
       {
-        // set the previous timestamp only for the first measurement
-        if (prev_timestamp == 0)
-        {
-          prev_timestamp = m.timestamp_;
-          VLOG(6) << "addImuMeasurements: Set previous timestamp to " << prev_timestamp;
-        }
+        auto &m = *it;
 
         double dt = m.timestamp_ - prev_timestamp;
+        std::cout.precision(17);
+        VLOG(6) << "addImuMeasurements: prev " << std::fixed << prev_timestamp << " new " << std::fixed << m.timestamp_ << " dt = " << dt;
         prev_timestamp = m.timestamp_;
-        VLOG(6) << "addImuMeasurements: dt = " << dt;
 
         preint_->integrateMeasurement(m.linear_acceleration_, m.angular_velocity_, dt);
       }
