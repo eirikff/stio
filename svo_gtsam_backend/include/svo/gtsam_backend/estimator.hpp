@@ -173,9 +173,23 @@ namespace svo
        * with the bundle id.
        *
        * @param bid Bundle ID to associate prediciton with.
+       * @param timestamp_s Timestamp in seconds of bundle with bundle id bid.
        * @return gtsam::NavState Prediction.
        */
-      gtsam::NavState predictWithImu(const BundleId &bid);
+      gtsam::NavState predictWithImu(const BundleId &bid, double timestamp_s);
+
+      /**
+       * @brief Get the number of frames processed by the backend. A frame has been
+       * processed if the IMU measurements up to that frame are preintegrated and
+       * a prediction for it's bundle id is calculated.
+       *
+       * @return int
+       */
+      inline int getNumFrames() const { return predictions_.keys().size() / 3; }
+
+      inline BundleId getLastAddedBid() const { return last_added_bid_; }
+
+      inline double getTimestampSeconds(BundleId bid) const { return bid_timestamp_s_map_.at(bid); }
 
     protected: // members
       gtsam::NonlinearFactorGraph graph_;
@@ -186,10 +200,13 @@ namespace svo
       gtsam::Values result_;         // results from last optimization
       gtsam::Values predictions_;    // predictions for every frame using imu preintegration
 
+      std::map<BundleId, double> bid_timestamp_s_map_;
+
       // for preintegration factor
-      BundleId last_kf_bundle_id_;
-      gtsam::NavState prev_optim_state_;
-      gtsam::imuBias::ConstantBias prev_optim_bias_;
+      BundleId last_optim_kf_bid_;
+      BundleId last_added_bid_;
+      gtsam::NavState last_optim_state_;
+      gtsam::imuBias::ConstantBias last_optim_bias_;
 
     protected: // functions
     };

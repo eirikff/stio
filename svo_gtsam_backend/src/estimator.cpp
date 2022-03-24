@@ -13,7 +13,7 @@ namespace svo
   namespace gtsam_backend
   {
     Estimator::Estimator()
-        : last_kf_bundle_id_(-1)
+        : last_optim_kf_bid_(-1)
     {
     }
 
@@ -190,11 +190,11 @@ namespace svo
       gtsam::LevenbergMarquardtOptimizer optimizer(graph_, initial_values_, param);
       result_ = optimizer.optimize();
 
-      prev_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_kf_bundle_id_)),
-                                          result_.at<gtsam::Vector3>(V(last_kf_bundle_id_)));
-      prev_optim_bias_ = result_.at<gtsam::imuBias::ConstantBias>(B(last_kf_bundle_id_));
+      last_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_optim_kf_bid_)),
+                                          result_.at<gtsam::Vector3>(V(last_optim_kf_bid_)));
+      last_optim_bias_ = result_.at<gtsam::imuBias::ConstantBias>(B(last_optim_kf_bid_));
 
-      preint_->resetIntegrationAndSetBias(prev_optim_bias_);
+      preint_->resetIntegrationAndSetBias(last_optim_bias_);
 
       return true;
     }
@@ -216,27 +216,30 @@ namespace svo
     bool Estimator::addPreintFactor(const BundleId &kf_id)
     {
       gtsam::CombinedImuFactor imu_factor(
-          X(last_kf_bundle_id_), V(last_kf_bundle_id_),
+          X(last_optim_kf_bid_), V(last_optim_kf_bid_),
           X(kf_id), V(kf_id),
-          B(last_kf_bundle_id_), B(kf_id),
+          B(last_optim_kf_bid_), B(kf_id),
           *preint_);
       graph_.add(imu_factor);
-      last_kf_bundle_id_ = kf_id;
+      last_optim_kf_bid_ = kf_id;
 
-      gtsam::NavState prop_state = preint_->predict(prev_optim_state_, prev_optim_bias_);
+      gtsam::NavState prop_state = preint_->predict(last_optim_state_, last_optim_bias_);
       initial_values_.insert(X(kf_id), prop_state.pose());
       initial_values_.insert(V(kf_id), prop_state.velocity());
-      initial_values_.insert(B(kf_id), prev_optim_bias_);
+      initial_values_.insert(B(kf_id), last_optim_bias_);
 
       return true;
     }
 
-    gtsam::NavState Estimator::predictWithImu(const BundleId &bid)
+    gtsam::NavState Estimator::predictWithImu(const BundleId &bid, double timestamp_s)
     {
-      gtsam::NavState pred = preint_->predict(prev_optim_state_, prev_optim_bias_);
+      gtsam::NavState pred = preint_->predict(last_optim_state_, last_optim_bias_);
       predictions_.insert(X(bid), pred.pose());
       predictions_.insert(V(bid), pred.velocity());
-      predictions_.insert(B(bid), prev_optim_bias_);
+      predictions_.insert(B(bid), last_optim_bias_);
+
+      last_added_bid_ = bid;
+      bid_timestamp_s_map_.insert({bid, timestamp_s});
 
       return pred;
     }
