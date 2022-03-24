@@ -67,10 +67,9 @@ namespace svo
     // this adds the latest imu measurements and preintegrates them
     backend_.addImuMeasurements(latest_imu_meas_);
 
-    // add projection factors using frames
-    // TODO: should this go here or in the bundleAdjustment/optimizationLoop function?
-    // TODO: should it take in both new_frames and last_frames, or just new_frames?
-    // backend_.addLandmarkObservations(new_frames, last_frames);
+    // this predicts using the recently added imu measurements and associates the
+    // prediction with the new_frames' bundle id
+    backend_.predictWithImu(new_frames->getBundleId());
 
     // gets the latest estimate from the backend and sets the frame T_W_B.
     // should also update speed and bias of the frame using latest estimate from backend.

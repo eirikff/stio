@@ -159,11 +159,11 @@ namespace svo
       gtsam::LevenbergMarquardtOptimizer optimizer(graph_, initial_values_, param);
       result_ = optimizer.optimize();
 
-      prev_state = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_kf_bundle_id_)),
-                                   result_.at<gtsam::Vector3>(V(last_kf_bundle_id_)));
-      prev_bias = result_.at<gtsam::imuBias::ConstantBias>(B(last_kf_bundle_id_));
+      prev_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_kf_bundle_id_)),
+                                          result_.at<gtsam::Vector3>(V(last_kf_bundle_id_)));
+      prev_optim_bias_ = result_.at<gtsam::imuBias::ConstantBias>(B(last_kf_bundle_id_));
 
-      preint_->resetIntegrationAndSetBias(prev_bias);
+      preint_->resetIntegrationAndSetBias(prev_optim_bias_);
 
       return true;
     }
@@ -192,12 +192,22 @@ namespace svo
       graph_.add(imu_factor);
       last_kf_bundle_id_ = kf_id;
 
-      gtsam::NavState prop_state = preint_->predict(prev_state, prev_bias);
+      gtsam::NavState prop_state = preint_->predict(prev_optim_state_, prev_optim_bias_);
       initial_values_.insert(X(kf_id), prop_state.pose());
       initial_values_.insert(V(kf_id), prop_state.velocity());
-      initial_values_.insert(B(kf_id), prev_bias);
+      initial_values_.insert(B(kf_id), prev_optim_bias_);
 
       return true;
+    }
+
+    gtsam::NavState Estimator::predictWithImu(const BundleId &bid)
+    {
+      gtsam::NavState pred = preint_->predict(prev_optim_state_, prev_optim_bias_);
+      predictions_.insert(X(bid), pred.pose());
+      predictions_.insert(V(bid), pred.velocity());
+      predictions_.insert(B(bid), prev_optim_bias_);
+
+      return pred;
     }
 
   } // namespace gtsam_backend

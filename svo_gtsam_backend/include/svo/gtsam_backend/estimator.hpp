@@ -168,18 +168,28 @@ namespace svo
        */
       bool addPreintFactor(const BundleId &kf_id);
 
+      /**
+       * @brief Predicts using the IMU preintegration and associate the prediction
+       * with the bundle id.
+       *
+       * @param bid Bundle ID to associate prediciton with.
+       * @return gtsam::NavState Prediction.
+       */
+      gtsam::NavState predictWithImu(const BundleId &bid);
+
     protected: // members
       gtsam::NonlinearFactorGraph graph_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
       gtsam_backend::CamParameters::shared_ptr cam_params_;
       std::shared_ptr<gtsam::PreintegratedCombinedMeasurements> preint_;
-      gtsam::Values initial_values_;
-      gtsam::Values result_;
+      gtsam::Values initial_values_; // initial values to give to optimzer
+      gtsam::Values result_;         // results from last optimization
+      gtsam::Values predictions_;    // predictions for every frame using imu preintegration
 
       // for preintegration factor
       BundleId last_kf_bundle_id_;
-      gtsam::NavState prev_state;
-      gtsam::imuBias::ConstantBias prev_bias;
+      gtsam::NavState prev_optim_state_;
+      gtsam::imuBias::ConstantBias prev_optim_bias_;
 
     protected: // functions
     };
