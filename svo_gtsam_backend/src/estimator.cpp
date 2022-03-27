@@ -78,8 +78,7 @@ namespace svo
         auto &m = *it;
 
         double dt = m.timestamp_ - prev_timestamp;
-        std::cout.precision(17);
-        VLOG(6) << "addImuMeasurements: prev " << std::fixed << prev_timestamp << " new " << std::fixed << m.timestamp_ << " dt = " << dt;
+        VLOG(15) << "addImuMeasurements: dt = " << dt;
         prev_timestamp = m.timestamp_;
 
         preint_->integrateMeasurement(m.linear_acceleration_, m.angular_velocity_, dt);
@@ -148,6 +147,9 @@ namespace svo
       speed_and_bias.segment<3>(3) = bias.gyroscope();
       speed_and_bias.segment<3>(6) = bias.accelerometer();
 
+      VLOG(6) << "speed_and_bias\n"
+              << speed_and_bias;
+
       return true;
     }
 
@@ -175,6 +177,8 @@ namespace svo
         }
       }
       T_WS = Transformation(pose.matrix());
+      VLOG(6) << "T_WS\n"
+              << T_WS;
 
       return true;
     }
