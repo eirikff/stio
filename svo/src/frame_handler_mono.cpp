@@ -94,22 +94,15 @@ namespace svo
     // make old frame keyframe
     initializer_->frames_ref_->setKeyframe();
     initializer_->frames_ref_->at(0)->setKeyframe();
-    if (bundle_adjustment_type_ == BundleAdjustmentType::kCeres)
-    {
-      map_->addKeyframe(initializer_->frames_ref_->at(0),
-                        bundle_adjustment_type_ == BundleAdjustmentType::kCeres);
-    }
-    else if (bundle_adjustment_type_ == BundleAdjustmentType::kGtsam)
-    {
-      // CHECK(bundle_adjustment_)
-      //     << "bundle_adjustment_type_ is kGtsam but bundle_adjustment_ is NULL";
-      // bundle_adjustment_->bundleAdjustment(initializer_->frames_ref_);
-      LOG(FATAL) << "GTSAM Backend not implemented yet.";
-    }
-    else
+    if (bundle_adjustment_type_ == BundleAdjustmentType::kNone)
     {
       map_->addKeyframe(initializer_->frames_ref_->at(0), false);
     }
+    else // ceres and gtsam backend
+    {
+      map_->addKeyframe(initializer_->frames_ref_->at(0), true);
+    }
+
     // make new frame keyframe
     newFrame()->setKeyframe();
     frame_utils::getSceneDepth(newFrame(), depth_median_, depth_min_, depth_max_);
