@@ -211,6 +211,7 @@ namespace svo
     mutable std::mutex mutex_backend_;
     std::unique_ptr<std::thread> thread_;
     std::atomic_bool stop_thread_{false};
+    bool do_optimize_ = false;
 
     // state
     // bundle id for which the IMU messages are added

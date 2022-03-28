@@ -154,7 +154,7 @@ namespace svo
     if (last_added_nframe_imu_ == last_added_nframe_images_)
     {
       VLOG(2) << "GtsamBackendInterface::bundleAdjustment: last_added_nframe_imu_ == last_added_nframe_images_ -> True";
-      return;
+      // return;
     }
 
     std::lock_guard<std::mutex> lock(mutex_backend_);
@@ -239,10 +239,30 @@ namespace svo
       backend_.addPreintFactor(frame_bundle->getBundleId());
     }
 
-    last_added_nframe_images_ = frame_bundle->getBundleId();
-    last_added_frame_stamp_ns_ = frame_bundle->getMinTimestampNanoseconds();
+    bool success = false;
+    if (!is_frontend_initialized_)
+    {
+      // add imu preintegration factor
+      // add external position as prior
+      BundleId bid = frame_bundle->getBundleId();
+      success = backend_.addPreintFactor(bid);
 
-    wait_condition_.notify_one();
+      double timestamp = frame_bundle->getMinTimestampSeconds();
+      gtsam::Point3 prior = ext_pos_handler_.getPosition(timestamp).second;
+      success = success && backend_.addExternalPositionPrior(bid, prior);
+
+      VLOG(3) << "Added external prior for bundle id " << bid
+              << " at timestamp " << std::setprecision(17) << timestamp << ": \n"
+              << prior;
+    }
+
+    // last_added_nframe_images_ = frame_bundle->getBundleId();
+    // last_added_frame_stamp_ns_ = frame_bundle->getMinTimestampNanoseconds();
+
+    if (success)
+      do_optimize_ = true;
+
+    wait_condition_.notify_all();
   }
 
   void GtsamBackendInterface::reset()
@@ -333,7 +353,10 @@ namespace svo
 
         wait_condition_.wait(
             lock, [&]
-            { return ((last_added_nframe_images_ != last_optimized_nframe_.load())) || stop_thread_; });
+            { return do_optimize_ || ((last_added_nframe_images_ != last_optimized_nframe_.load())) || stop_thread_; });
+
+        do_optimize_ = false;
+        VLOG(1) << "Optimization loop got notified!";
 
         if (stop_thread_)
         {

@@ -13,7 +13,7 @@ namespace svo
   namespace gtsam_backend
   {
     Estimator::Estimator()
-        : last_optim_kf_bid_(-1)
+        : last_optim_bid_(-1)
     {
     }
 
@@ -64,11 +64,12 @@ namespace svo
 
     bool Estimator::addImuMeasurements(const ImuMeasurements &meas)
     {
-      if (total_keyframes_count_ == 0)
-      {
-        VLOG(5) << "Not adding IMU measurements to backend to avoid initial drift.";
-        return false;
-      }
+      // if (total_keyframes_count_ == 0)
+      // {
+      //   VLOG(5) << "Not adding IMU measurements to backend to avoid initial drift.";
+      //   return false;
+      // }
+
       // The meas arg is a deque with the newest measurements in front and the oldest
       // in the back. The IMU handler deletes old measurements when they are extracted,
       // but it seems to keep the two first measurements so that in the next call
@@ -198,14 +199,17 @@ namespace svo
 
     bool Estimator::optimize()
     {
+      if (last_optim_bid_ == -1)
+        return false;
+
       gtsam::LevenbergMarquardtParams param;
       param.setVerbosityLM("SUMMARY");
       gtsam::LevenbergMarquardtOptimizer optimizer(graph_, initial_values_, param);
       result_ = optimizer.optimize();
 
-      last_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_optim_kf_bid_)),
-                                          result_.at<gtsam::Vector3>(V(last_optim_kf_bid_)));
-      last_optim_bias_ = result_.at<gtsam::imuBias::ConstantBias>(B(last_optim_kf_bid_));
+      last_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_optim_bid_)),
+                                          result_.at<gtsam::Vector3>(V(last_optim_bid_)));
+      last_optim_bias_ = result_.at<gtsam::imuBias::ConstantBias>(B(last_optim_bid_));
 
       preint_->resetIntegrationAndSetBias(last_optim_bias_);
 
@@ -226,20 +230,27 @@ namespace svo
       return true;
     }
 
-    bool Estimator::addPreintFactor(const BundleId &kf_id)
+    bool Estimator::addPreintFactor(const BundleId &bid)
     {
+      if (last_optim_bid_ == -1)
+      {
+        // this will only be run the first time the function is called
+        last_optim_bid_ = bid;
+        return false;
+      }
+
       gtsam::CombinedImuFactor imu_factor(
-          X(last_optim_kf_bid_), V(last_optim_kf_bid_),
-          X(kf_id), V(kf_id),
-          B(last_optim_kf_bid_), B(kf_id),
+          X(last_optim_bid_), V(last_optim_bid_),
+          X(bid), V(bid),
+          B(last_optim_bid_), B(bid),
           *preint_);
       graph_.add(imu_factor);
-      last_optim_kf_bid_ = kf_id;
+      last_optim_bid_ = bid;
 
       gtsam::NavState prop_state = preint_->predict(last_optim_state_, last_optim_bias_);
-      initial_values_.insert(X(kf_id), prop_state.pose());
-      initial_values_.insert(V(kf_id), prop_state.velocity());
-      initial_values_.insert(B(kf_id), last_optim_bias_);
+      initial_values_.insert(X(bid), prop_state.pose());
+      initial_values_.insert(V(bid), prop_state.velocity());
+      initial_values_.insert(B(bid), last_optim_bias_);
 
       return true;
     }
@@ -255,6 +266,27 @@ namespace svo
       bid_timestamp_s_map_.insert({bid, timestamp_s});
 
       return pred;
+    }
+
+    bool Estimator::addExternalPositionPrior(BundleId bid, gtsam::Point3 prior)
+    {
+      // have to add a pose3 prior, not only a point3 prior, so setting rotation
+      // covariance to infinity so it's not considered in the optimization
+      gtsam::Pose3 pose_prior(gtsam::Rot3::identity(), prior);
+      auto noise = gtsam::noiseModel::Diagonal::Sigmas(
+          (gtsam::Vector(6) << INFINITY, INFINITY, INFINITY, 1e-3, 1e-3, 1e-3).finished() // rad, rad, rad, m, m, m
+      );
+
+      graph_.addPrior(X(bid), pose_prior, noise);
+
+      if (initial_values_.exists(X(bid)))
+      {
+        gtsam::Pose3 p = initial_values_.at<gtsam::Pose3>(X(bid));
+        pose_prior = gtsam::Pose3(p.rotation(), prior);
+      }
+      initial_values_.insert_or_assign(X(bid), pose_prior);
+
+      return true;
     }
 
   } // namespace gtsam_backend

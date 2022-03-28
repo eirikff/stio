@@ -162,11 +162,11 @@ namespace svo
       /**
        * @brief
        *
-       * @param kf_id
+       * @param bid
        * @return true
        * @return false
        */
-      bool addPreintFactor(const BundleId &kf_id);
+      bool addPreintFactor(const BundleId &bid);
 
       /**
        * @brief Predicts using the IMU preintegration and associate the prediction
@@ -193,6 +193,8 @@ namespace svo
 
       inline void increaseTotalKeyframeCount() { total_keyframes_count_++; }
 
+      bool addExternalPositionPrior(BundleId bid, gtsam::Point3 prior);
+
     protected: // members
       gtsam::NonlinearFactorGraph graph_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
@@ -206,7 +208,7 @@ namespace svo
       size_t total_keyframes_count_ = 0;
 
       // for preintegration factor
-      BundleId last_optim_kf_bid_;
+      BundleId last_optim_bid_ = -1;
       BundleId last_added_bid_;
       gtsam::NavState last_optim_state_;
       gtsam::imuBias::ConstantBias last_optim_bias_;
