@@ -27,11 +27,7 @@ namespace svo
     {
       CHECK(!messages_.empty()) << "No position messages has been added.";
 
-      // *it is the first element greater than or equal timestamp, so to interpolate
-      // we want the first element less than timestamp (i.e. it - 1) and the first
-      // element greater than or equal (i.e. it)
-      // see: https://en.cppreference.com/w/cpp/container/map/lower_bound
-      auto it = messages_.lower_bound(timestamp);
+      auto it = messages_.upper_bound(timestamp);
 
       if (it == messages_.end())
       {
@@ -40,13 +36,19 @@ namespace svo
         return *(--it);
       }
 
-      auto &after = it;
-      auto &before = --it;
+      if (messages_.size() == 1)
+      {
+        // only a single element, return it as it's the best guess
+        return *it;
+      }
 
-      const Point3 &p_before = before->second;
-      const Point3 &p_after = after->second;
-      const double &t_before = before->first;
-      const double &t_after = after->first;
+      auto after = *it;
+      auto before = *(--it);
+
+      const Point3 &p_before = before.second;
+      const Point3 &p_after = after.second;
+      const double &t_before = before.first;
+      const double &t_after = after.first;
       double dt = t_after - t_before;
       double t = (timestamp - t_before) / dt;
       CHECK(t >= 0 && t <= 1) << "Interpolation parameter t = " << t << " is not in range [0, 1].";
@@ -54,7 +56,7 @@ namespace svo
       return {timestamp, interp};
     }
 
-    inline void addPosition(const boost::shared_ptr<MsgType> &msg)
+    inline void addPosition(const boost::shared_ptr<const MsgType> &msg)
     {
       Point3 p = getPosition(msg);
       double ts = msg->header.stamp.toSec();
@@ -64,12 +66,12 @@ namespace svo
 
   public:    // member
   protected: // functions
-    inline Point3 getPosition(const geometry_msgs::PointStamped::Ptr msg) const
+    inline Point3 getPosition(const geometry_msgs::PointStamped::ConstPtr msg) const
     {
       auto p = msg->point;
       return gtsam::Point3(p.x, p.y, p.z);
     }
-    inline Point3 getPosition(const nav_msgs::Odometry::Ptr msg) const
+    inline Point3 getPosition(const nav_msgs::Odometry::ConstPtr msg) const
     {
       auto p = msg->pose.pose.position;
       return gtsam::Point3(p.x, p.y, p.z);
