@@ -14,6 +14,7 @@
 #include <svo/outlier_rejection.hpp>
 
 #include "svo/gtsam_backend/estimator.hpp"
+#include "svo/external_pos_handler.hpp"
 
 namespace svo
 {
@@ -197,6 +198,7 @@ namespace svo
     std::unique_ptr<MotionDetector> motion_detector_;
     size_t no_motion_counter_;
     std::unique_ptr<OutlierRejection> outlier_rejection_;
+    ExternalPositionHandler<geometry_msgs::PointStamped> ext_pos_handler_; // TODO: make template type depend on parameters
 
     // Threading
     mutable std::condition_variable wait_condition_;

@@ -143,7 +143,10 @@ namespace svo
 
     // if imu measurements could not be added.
     if (last_added_nframe_imu_ == last_added_nframe_images_)
+    {
+      VLOG(2) << "GtsamBackendInterface::bundleAdjustment: last_added_nframe_imu_ == last_added_nframe_images_ -> True";
       return;
+    }
 
     std::lock_guard<std::mutex> lock(mutex_backend_);
 

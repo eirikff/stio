@@ -28,6 +28,7 @@ endif ()
 set(HEADERS
   include/svo/gtsam_backend_interface.hpp
   include/svo/gtsam_backend/estimator.hpp
+  include/svo/external_pos_handler.hpp
   )
 
 set(SOURCES
