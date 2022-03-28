@@ -64,6 +64,11 @@ namespace svo
 
     bool Estimator::addImuMeasurements(const ImuMeasurements &meas)
     {
+      if (total_keyframes_count_ == 0)
+      {
+        VLOG(5) << "Not adding IMU measurements to backend to avoid initial drift.";
+        return false;
+      }
       // The meas arg is a deque with the newest measurements in front and the oldest
       // in the back. The IMU handler deletes old measurements when they are extracted,
       // but it seems to keep the two first measurements so that in the next call

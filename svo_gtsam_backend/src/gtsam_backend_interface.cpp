@@ -223,6 +223,7 @@ namespace svo
 
     if (is_keyframe)
     {
+      backend_.increaseTotalKeyframeCount();
       backend_.addPreintFactor(frame_bundle->getBundleId());
     }
 

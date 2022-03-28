@@ -191,6 +191,8 @@ namespace svo
 
       inline double getTimestampSeconds(BundleId bid) const { return bid_timestamp_s_map_.at(bid); }
 
+      inline void increaseTotalKeyframeCount() { total_keyframes_count_++; }
+
     protected: // members
       gtsam::NonlinearFactorGraph graph_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
@@ -201,6 +203,7 @@ namespace svo
       gtsam::Values predictions_;    // predictions for every frame using imu preintegration
 
       std::map<BundleId, double> bid_timestamp_s_map_;
+      size_t total_keyframes_count_ = 0;
 
       // for preintegration factor
       BundleId last_optim_kf_bid_;
