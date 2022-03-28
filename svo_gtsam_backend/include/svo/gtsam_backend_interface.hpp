@@ -191,6 +191,12 @@ namespace svo
       LOG(ERROR) << "GtsamBackendInterface::startTimer is not implemented.";
     }
 
+    template <typename MsgType>
+    inline void addExternalPositionMessage(const boost::shared_ptr<MsgType> &msg)
+    {
+      ext_pos_handler_.addPosition(msg);
+    }
+
   protected: // members
     // modules
     gtsam_backend::Estimator backend_;

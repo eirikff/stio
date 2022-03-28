@@ -141,6 +141,10 @@ namespace svo
     if (stop_thread_)
       return;
 
+    double ts = frame_bundle->getMinTimestampSeconds();
+    VLOG(1) << "External prior at timestamp " << std::setprecision(17) << ts << ": \n"
+            << ext_pos_handler_.getPosition(ts).second;
+
     // if imu measurements could not be added.
     if (last_added_nframe_imu_ == last_added_nframe_images_)
     {

@@ -447,6 +447,11 @@ namespace svo
     }
   }
 
+  void SvoInterface::externalPositionCallback(const geometry_msgs::PointStamped::ConstPtr &msg)
+  {
+    gtsam_backend_interface_->addExternalPositionMessage(msg);
+  }
+
   void SvoInterface::subscribeImu()
   {
     imu_thread_ = std::unique_ptr<std::thread>(
@@ -470,6 +475,13 @@ namespace svo
         vk::param<std::string>(pnh_, "remote_key_topic", "svo/remote_key");
     sub_remote_key_ =
         nh_.subscribe(remote_key_topic, 5, &svo::SvoInterface::inputKeyCallback, this);
+  }
+
+  void SvoInterface::subscribeExternalPosition()
+  {
+    ext_pos_thread_ = std::unique_ptr<std::thread>(
+        new std::thread(&SvoInterface::externalPositionLoop, this));
+    sleep(3);
   }
 
   void SvoInterface::imuLoop()
@@ -525,6 +537,20 @@ namespace svo
     ExactSync sync_sub(ExactPolicy(5), sub0, sub1);
     sync_sub.registerCallback(boost::bind(&svo::SvoInterface::stereoCallback, this, _1, _2));
 
+    while (ros::ok() && !quit_)
+    {
+      queue.callAvailable(ros::WallDuration(0.1));
+    }
+  }
+
+  void SvoInterface::externalPositionLoop()
+  {
+    SVO_INFO_STREAM("SvoNode: Started External Position loop.");
+    ros::NodeHandle nh;
+    ros::CallbackQueue queue;
+    nh.setCallbackQueue(&queue);
+    std::string ext_pos_topic = vk::param<std::string>(pnh_, "external_position_topic", "external_position");
+    ros::Subscriber sub_ext_pos = nh.subscribe(ext_pos_topic, 10, &svo::SvoInterface::externalPositionCallback, this);
     while (ros::ok() && !quit_)
     {
       queue.callAvailable(ros::WallDuration(0.1));

@@ -11,6 +11,8 @@
 #include <svo/common/camera_fwd.h>
 #include <svo/common/transformation.h>
 
+#include <geometry_msgs/PointStamped.h>
+
 namespace svo
 {
 
@@ -43,6 +45,7 @@ namespace svo
     std::string remote_input_;
     std::unique_ptr<std::thread> imu_thread_;
     std::unique_ptr<std::thread> image_thread_;
+    std::unique_ptr<std::thread> ext_pos_thread_;
 
     // SVO modules.
     std::shared_ptr<FrameHandlerBase> svo_;
@@ -88,6 +91,7 @@ namespace svo
         const sensor_msgs::ImageConstPtr &msg1);
     void imuCallback(const sensor_msgs::ImuConstPtr &imu_msg);
     void inputKeyCallback(const std_msgs::StringConstPtr &key_input);
+    void externalPositionCallback(const geometry_msgs::PointStamped::ConstPtr &msg);
 
     // These functions are called before and after monoCallback or stereoCallback.
     // a derived class can implement some additional logic here.
@@ -97,10 +101,12 @@ namespace svo
     void subscribeImu();
     void subscribeImage();
     void subscribeRemoteKey();
+    void subscribeExternalPosition();
 
     void imuLoop();
     void monoLoop();
     void stereoLoop();
+    void externalPositionLoop();
   };
 
 } // namespace svo

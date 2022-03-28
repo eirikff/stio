@@ -29,6 +29,11 @@ namespace svo_ros
     }
     svo_interface_.subscribeImage();
     svo_interface_.subscribeRemoteKey();
+
+    if (svo_interface_.gtsam_backend_interface_)
+    {
+      svo_interface_.subscribeExternalPosition();
+    }
   }
 
   void SvoNodeBase::run()
