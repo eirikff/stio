@@ -215,7 +215,8 @@ namespace svo
           svo_->getLastFrames(), svo_->closeKeyframes(), svo_->map());
       visualizer_->exportToDense(svo_->getLastFrames());
       bool draw_boundary = false;
-      if (svo_->isBackendValid())
+      // only call this if using ceres backend
+      if (svo_->isBackendValid() && ceres_backend_interface_)
       {
         draw_boundary = svo_->getBundleAdjuster()->isFixedToGlobalMap();
       }
