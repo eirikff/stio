@@ -223,6 +223,8 @@ namespace svo
     // updated in the fronend
     BundleId last_updated_nframe_ = -1;
 
+    bool is_frontend_initialized_ = false;
+
     // the bundle id for which the backend has finished optimization
     std::atomic<BundleId> last_optimized_nframe_{-1};
 

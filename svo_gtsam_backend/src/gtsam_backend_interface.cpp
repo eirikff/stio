@@ -145,6 +145,11 @@ namespace svo
     VLOG(1) << "External prior at timestamp " << std::setprecision(17) << ts << ": \n"
             << ext_pos_handler_.getPosition(ts).second;
 
+    if (!is_frontend_initialized_ && frame_bundle->at(0)->isKeyframe())
+    {
+      is_frontend_initialized_ = true;
+    }
+
     // if imu measurements could not be added.
     if (last_added_nframe_imu_ == last_added_nframe_images_)
     {
