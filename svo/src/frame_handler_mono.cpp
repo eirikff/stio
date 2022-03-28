@@ -235,23 +235,22 @@ namespace svo
     //  depth_filter_->updateSeeds(overlap_kfs_.at(0), newFrame());
 
     // add keyframe to map
-    map_->addKeyframe(newFrame(),
-                      bundle_adjustment_type_ == BundleAdjustmentType::kCeres);
+    map_->addKeyframe(newFrame(), bundle_adjustment_type_ != BundleAdjustmentType::kNone);
 
     // if limited number of keyframes, remove the one furthest apart
     if (options_.max_n_kfs > 2)
     {
       while (map_->size() > options_.max_n_kfs)
       {
-        if (bundle_adjustment_type_ == BundleAdjustmentType::kCeres)
-        {
-          // deal differently with map for ceres backend
-          map_->removeOldestKeyframe();
-        }
-        else
+        if (bundle_adjustment_type_ == BundleAdjustmentType::kNone)
         {
           FramePtr furthest_frame = map_->getFurthestKeyframe(newFrame()->pos());
           map_->removeKeyframe(furthest_frame->id());
+        }
+        else
+        {
+          // deal differently with map for ceres backend
+          map_->removeOldestKeyframe();
         }
       }
     }
