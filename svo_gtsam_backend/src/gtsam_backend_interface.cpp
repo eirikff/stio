@@ -247,6 +247,9 @@ namespace svo
       BundleId bid = frame_bundle->getBundleId();
       success = backend_.addPreintFactor(bid);
 
+      if (!success)
+        return;
+
       double timestamp = frame_bundle->getMinTimestampSeconds();
       gtsam::Point3 prior = ext_pos_handler_.getPosition(timestamp).second;
       success = success && backend_.addExternalPositionPrior(bid, prior);

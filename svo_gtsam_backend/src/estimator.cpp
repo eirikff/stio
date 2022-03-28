@@ -6,6 +6,8 @@
 
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 
+#include <gtsam_unstable/slam/PartialPriorFactor.h>
+
 #include <iostream>
 
 namespace svo
@@ -270,21 +272,12 @@ namespace svo
 
     bool Estimator::addExternalPositionPrior(BundleId bid, gtsam::Point3 prior)
     {
-      // have to add a pose3 prior, not only a point3 prior, so setting rotation
-      // covariance to infinity so it's not considered in the optimization
-      gtsam::Pose3 pose_prior(gtsam::Rot3::identity(), prior);
-      auto noise = gtsam::noiseModel::Diagonal::Sigmas(
-          (gtsam::Vector(6) << INFINITY, INFINITY, INFINITY, 1e-3, 1e-3, 1e-3).finished() // rad, rad, rad, m, m, m
-      );
+      static const std::vector<size_t> indices = {3, 4, 5};
+      auto noise = gtsam::noiseModel::Isotropic::Sigma(3, 1e-3);
+      gtsam::PartialPriorFactor<gtsam::Pose3> prior_factor(X(bid), indices, prior, noise);
+      graph_.add<gtsam::PartialPriorFactor<gtsam::Pose3>>(prior_factor);
 
-      graph_.addPrior(X(bid), pose_prior, noise);
-
-      if (initial_values_.exists(X(bid)))
-      {
-        gtsam::Pose3 p = initial_values_.at<gtsam::Pose3>(X(bid));
-        pose_prior = gtsam::Pose3(p.rotation(), prior);
-      }
-      initial_values_.insert_or_assign(X(bid), pose_prior);
+      // initial_values_.insert_or_assign(X(bid), prior);
 
       return true;
     }
