@@ -13,6 +13,9 @@
     <!-- Imu topic to subscribe to -->
     <param name="imu_topic" value="/imu0" type="str" />
 
+    <!-- External position reference topic -->
+    <param name="external_position_topic" value="/leica/position" type="str" />
+
     <!-- Camera calibration file -->
     <param name="calib_file" value="$(arg calib_file)" />
 
