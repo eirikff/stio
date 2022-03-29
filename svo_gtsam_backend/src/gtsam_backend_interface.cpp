@@ -82,11 +82,12 @@ namespace svo
     have_motion_prior = true;
 
     // Skip updating the frame variables if no update is available
-    if (last_updated_nframe_ == last_optimized_nframe_.load())
-    {
-      VLOG(3) << "No map update available.";
-      return;
-    }
+    // if (last_updated_nframe_ == last_optimized_bid_.load())
+    // {
+    //   VLOG(3) << "No map update available.";
+    //   return;
+    // }
+    return; // TODO: this is only for debugging!
 
     // Update active keyframes with latest estimate
     int n_frames_updated = 0;
@@ -133,7 +134,7 @@ namespace svo
     imu_handler_->setGyroscopeBias(speed_and_bias.segment<3>(3));
 
     // shift state
-    last_updated_nframe_ = last_optimized_nframe_.load();
+    // last_updated_nframe_ = last_optimized_bid_.load();
   }
 
   void GtsamBackendInterface::bundleAdjustment(const FrameBundlePtr &frame_bundle)
@@ -151,11 +152,11 @@ namespace svo
     }
 
     // if imu measurements could not be added.
-    if (last_added_nframe_imu_ == last_added_nframe_images_)
-    {
-      VLOG(2) << "GtsamBackendInterface::bundleAdjustment: last_added_nframe_imu_ == last_added_nframe_images_ -> True";
-      // return;
-    }
+    // if (last_added_nframe_imu_ == last_added_nframe_images_)
+    // {
+    //   VLOG(2) << "GtsamBackendInterface::bundleAdjustment: last_added_nframe_imu_ == last_added_nframe_images_ -> True";
+    //   // return;
+    // }
 
     std::lock_guard<std::mutex> lock(mutex_backend_);
 
@@ -242,16 +243,17 @@ namespace svo
     bool success = false;
     if (!is_frontend_initialized_)
     {
-      // add imu preintegration factor
-      // add external position as prior
+      double timestamp = frame_bundle->getMinTimestampSeconds();
+      gtsam::Point3 prior = ext_pos_handler_.getPosition(timestamp).second;
+
       BundleId bid = frame_bundle->getBundleId();
-      success = backend_.addPreintFactor(bid);
+      success = backend_.addPreintFactor(bid, &prior);
 
       if (!success)
         return;
 
-      double timestamp = frame_bundle->getMinTimestampSeconds();
-      gtsam::Point3 prior = ext_pos_handler_.getPosition(timestamp).second;
+      VLOG(3) << "Added IMU preintegration factor for bid " << bid << " before front-end is initialized.";
+
       success = success && backend_.addExternalPositionPrior(bid, prior);
 
       VLOG(3) << "Added external prior for bundle id " << bid
@@ -356,7 +358,7 @@ namespace svo
 
         wait_condition_.wait(
             lock, [&]
-            { return do_optimize_ || ((last_added_nframe_images_ != last_optimized_nframe_.load())) || stop_thread_; });
+            { return do_optimize_ || stop_thread_; });
 
         do_optimize_ = false;
         VLOG(1) << "Optimization loop got notified!";
@@ -378,15 +380,13 @@ namespace svo
         //       it is possible to calculate the estimates of the variables
         //       most likely to be retrieved and handle the cases when the
         //       value is not already calculated?
-        backend_.optimize();
-
-        last_optimized_nframe_.store(last_added_nframe_images_);
+        last_optimized_bid_ = backend_.optimize();
 
         Transformation T_WS;
-        backend_.getT_WS(last_optimized_nframe_.load(), T_WS);
+        backend_.getT_WS(last_optimized_bid_, T_WS);
 
         gtsam_backend::SpeedAndBias speed_and_bias;
-        backend_.getSpeedAndBias(last_optimized_nframe_, speed_and_bias);
+        backend_.getSpeedAndBias(last_optimized_bid_, speed_and_bias);
 
         // Save state for visualization
         last_state_.set_T_W_B(T_WS);
@@ -413,9 +413,7 @@ namespace svo
     latest_imu_meas_.clear();
     if (!imu_handler_->getMeasurementsContainingEdges(timestamp_s, latest_imu_meas_, true))
     {
-      LOG(ERROR) << "Could not retrieve IMU measurements."
-                 << " Last frame was at " << last_added_frame_stamp_ns_
-                 << ", current is at " << timestamp_s;
+      LOG(ERROR) << "Could not retrieve IMU measurements until timestamp " << timestamp_s;
       return false;
     }
 

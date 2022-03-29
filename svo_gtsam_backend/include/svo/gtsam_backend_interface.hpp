@@ -173,7 +173,7 @@ namespace svo
 
     inline BundleId lastOptimizedBundleId() const override
     {
-      return last_optimized_nframe_.load();
+      return last_optimized_bid_;
     }
 
     inline void getLastState(ViNodeState *state) const override
@@ -213,21 +213,10 @@ namespace svo
     std::atomic_bool stop_thread_{false};
     bool do_optimize_ = false;
 
-    // state
-    // bundle id for which the IMU messages are added
-    BundleId last_added_nframe_imu_ = -1;
-    // bundle id for which the images and observations are added (after frontend)
-    BundleId last_added_nframe_images_ = -1;
-    // book keeping for the time
-    int64_t last_added_frame_stamp_ns_ = 0;
-    // the bundle id for which the optimized states have been
-    // updated in the fronend
-    BundleId last_updated_nframe_ = -1;
+    BundleId last_optimized_bid_ = -1;
+    BundleId last_added_factor_bid_ = -1;
 
     bool is_frontend_initialized_ = false;
-
-    // the bundle id for which the backend has finished optimization
-    std::atomic<BundleId> last_optimized_nframe_{-1};
 
     // variables for handling optimization choices
     bool skip_optimization_once_ = false;

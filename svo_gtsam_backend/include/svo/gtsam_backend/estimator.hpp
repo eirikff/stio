@@ -148,7 +148,12 @@ namespace svo
        */
       bool addVelocityPrior(const BundleId &kf_id, const Eigen::Vector3d &value, double sigma);
 
-      bool optimize();
+      /**
+       * @brief
+       *
+       * @return BundleId The bundle id of the last optimized factor
+       */
+      BundleId optimize();
 
       /**
        * @brief Checks if a landmark with id is in the iSAM2 estimator.
@@ -166,7 +171,7 @@ namespace svo
        * @return true
        * @return false
        */
-      bool addPreintFactor(const BundleId &bid);
+      bool addPreintFactor(const BundleId &bid, const gtsam::Point3 *const pos_prior = nullptr);
 
       /**
        * @brief Predicts using the IMU preintegration and associate the prediction
@@ -187,7 +192,7 @@ namespace svo
        */
       inline int getNumFrames() const { return predictions_.keys().size() / 3; }
 
-      inline BundleId getLastAddedBid() const { return last_added_bid_; }
+      inline BundleId getLastAddedBid() const { return last_predict_bid_; }
 
       inline double getTimestampSeconds(BundleId bid) const { return bid_timestamp_s_map_.at(bid); }
 
@@ -208,8 +213,8 @@ namespace svo
       size_t total_keyframes_count_ = 0;
 
       // for preintegration factor
-      BundleId last_optim_bid_ = -1;
-      BundleId last_added_bid_;
+      BundleId last_preint_factor_bid_ = -1;
+      BundleId last_predict_bid_;
       gtsam::NavState last_optim_state_;
       gtsam::imuBias::ConstantBias last_optim_bias_;
 

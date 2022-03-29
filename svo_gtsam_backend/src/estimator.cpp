@@ -15,7 +15,7 @@ namespace svo
   namespace gtsam_backend
   {
     Estimator::Estimator()
-        : last_optim_bid_(-1)
+        : last_preint_factor_bid_(-1)
     {
     }
 
@@ -199,9 +199,9 @@ namespace svo
       return true;
     }
 
-    bool Estimator::optimize()
+    BundleId Estimator::optimize()
     {
-      if (last_optim_bid_ == -1)
+      if (last_preint_factor_bid_ == -1)
         return false;
 
       gtsam::LevenbergMarquardtParams param;
@@ -209,13 +209,13 @@ namespace svo
       gtsam::LevenbergMarquardtOptimizer optimizer(graph_, initial_values_, param);
       result_ = optimizer.optimize();
 
-      last_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_optim_bid_)),
-                                          result_.at<gtsam::Vector3>(V(last_optim_bid_)));
-      last_optim_bias_ = result_.at<gtsam::imuBias::ConstantBias>(B(last_optim_bid_));
+      last_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_preint_factor_bid_)),
+                                          result_.at<gtsam::Vector3>(V(last_preint_factor_bid_)));
+      last_optim_bias_ = result_.at<gtsam::imuBias::ConstantBias>(B(last_preint_factor_bid_));
 
       preint_->resetIntegrationAndSetBias(last_optim_bias_);
 
-      return true;
+      return last_preint_factor_bid_;
     }
 
     bool Estimator::isLandmarkInEstimator(const int id) const
@@ -232,22 +232,31 @@ namespace svo
       return true;
     }
 
-    bool Estimator::addPreintFactor(const BundleId &bid)
+    bool Estimator::addPreintFactor(const BundleId &bid, const gtsam::Point3 *const pos_prior)
     {
-      if (last_optim_bid_ == -1)
+      if (last_preint_factor_bid_ == -1)
       {
         // this will only be run the first time the function is called
-        last_optim_bid_ = bid;
+        if (pos_prior)
+        {
+          gtsam::Pose3 prior(gtsam::Rot3::identity(), *pos_prior);
+          last_optim_state_ = gtsam::NavState(prior, gtsam::Vector3::Zero());
+          initial_values_.insert(X(bid), prior);
+        }
+
+        initial_values_.insert(V(bid), gtsam::Vector3(0, 0, 0));
+        initial_values_.insert(B(bid), gtsam::imuBias::ConstantBias());
+        last_preint_factor_bid_ = bid;
         return false;
       }
 
       gtsam::CombinedImuFactor imu_factor(
-          X(last_optim_bid_), V(last_optim_bid_),
+          X(last_preint_factor_bid_), V(last_preint_factor_bid_),
           X(bid), V(bid),
-          B(last_optim_bid_), B(bid),
+          B(last_preint_factor_bid_), B(bid),
           *preint_);
       graph_.add(imu_factor);
-      last_optim_bid_ = bid;
+      last_preint_factor_bid_ = bid;
 
       gtsam::NavState prop_state = preint_->predict(last_optim_state_, last_optim_bias_);
       initial_values_.insert(X(bid), prop_state.pose());
@@ -264,7 +273,7 @@ namespace svo
       predictions_.insert(V(bid), pred.velocity());
       predictions_.insert(B(bid), last_optim_bias_);
 
-      last_added_bid_ = bid;
+      last_predict_bid_ = bid;
       bid_timestamp_s_map_.insert({bid, timestamp_s});
 
       return pred;
