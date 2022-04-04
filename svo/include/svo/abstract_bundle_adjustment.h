@@ -88,6 +88,20 @@ namespace svo
 
     virtual void getLastState(ViNodeState *state) const = 0;
 
+    virtual bool isInitializedWithExternalPrior() const
+    {
+      // This is kinda a hack to get it to work without circular dependecies as
+      // GtsamBackendInterface depends on the svo library, so the declaration
+      // of class GtsamBackendInterface counld't be included here to cast the
+      // bundle_adjustment_ member of FrameHandlerBase to access this function
+      // which is only relevant for the GTSAM backend.
+      CHECK(type_ == BundleAdjustmentType::kGtsam) << "isInitializedWithExternalPrior is only meant to be used with the GTSAM backend.";
+
+      // If this is not reimplemented in the derived class, assume it is initialized
+      // or doesn't use it.
+      return true;
+    }
+
   protected:
     BundleAdjustmentType type_ = BundleAdjustmentType::kNone;
   };

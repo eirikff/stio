@@ -39,8 +39,6 @@
 #include "svo/imu_handler.h"
 #include "svo/pose_optimizer.h"
 
-#include <svo/gtsam_backend_interface.hpp>
-
 namespace
 {
   inline double distanceFirstTwoKeyframes(svo::Map &map)
@@ -57,7 +55,6 @@ namespace
 
 namespace svo
 {
-
   // definition of global and static variables which were declared in the header
   PerformanceMonitorPtr g_permon;
 
@@ -356,8 +353,7 @@ namespace svo
     if (bundle_adjustment_->getType() == BundleAdjustmentType::kGtsam)
     {
       // only track if external prior has run for desired amount
-      auto ba = dynamic_cast<GtsamBackendInterface *>(bundle_adjustment_.get());
-      if (ba->isInitializedWithExternalPrior())
+      if (bundle_adjustment_->isInitializedWithExternalPrior())
       {
         update_res_ = processFrameBundle();
       }
