@@ -201,6 +201,9 @@ namespace svo
 
     BundleId Estimator::optimize()
     {
+      graph_.print("FACTOR GRAPH: ");
+      initial_values_.print("INITIAL VALUES: ");
+
       if (last_preint_factor_bid_ == -1)
         return false;
 
@@ -282,7 +285,7 @@ namespace svo
     bool Estimator::addExternalPositionPrior(BundleId bid, gtsam::Point3 prior)
     {
       static const std::vector<size_t> indices = {3, 4, 5};
-      auto noise = gtsam::noiseModel::Isotropic::Sigma(3, 1e-3);
+      auto noise = gtsam::noiseModel::Isotropic::Sigma(3, 1e-6);
       gtsam::PartialPriorFactor<gtsam::Pose3> prior_factor(X(bid), indices, prior, noise);
       graph_.add<gtsam::PartialPriorFactor<gtsam::Pose3>>(prior_factor);
 

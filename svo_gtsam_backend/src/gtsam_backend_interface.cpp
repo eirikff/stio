@@ -249,12 +249,14 @@ namespace svo
       BundleId bid = frame_bundle->getBundleId();
       success = backend_.addPreintFactor(bid, &prior);
 
-      if (!success)
-        return;
+      // if (!success)
+      //   return;
 
       VLOG(3) << "Added IMU preintegration factor for bid " << bid << " before front-end is initialized.";
 
-      success = success && backend_.addExternalPositionPrior(bid, prior);
+      // need temporary variable to run function and avoid short-circuit evaluation
+      bool tmp = backend_.addExternalPositionPrior(bid, prior);
+      success = success && tmp;
 
       VLOG(3) << "Added external prior for bundle id " << bid
               << " at timestamp " << std::setprecision(17) << timestamp << ": \n"
@@ -521,6 +523,14 @@ namespace svo
     }
 
     return false;
+  }
+
+  bool GtsamBackendInterface::isInitializedWithExternalPrior() const
+  {
+    // TODO: return true when the backend has processed e.g. 5 seconds of IMU and
+    //       external priors as that's the heuristic we'll use to determine if
+    //       the backend is initialized.
+    return true;
   }
 
 } // namespace svo
