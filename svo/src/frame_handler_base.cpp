@@ -39,6 +39,8 @@
 #include "svo/imu_handler.h"
 #include "svo/pose_optimizer.h"
 
+#include <svo/gtsam_backend_interface.hpp>
+
 namespace
 {
   inline double distanceFirstTwoKeyframes(svo::Map &map)
@@ -351,7 +353,24 @@ namespace svo
     }
 
     // Perform tracking.
-    update_res_ = processFrameBundle();
+    if (bundle_adjustment_->getType() == BundleAdjustmentType::kGtsam)
+    {
+      // only track if external prior has run for desired amount
+      auto ba = dynamic_cast<GtsamBackendInterface *>(bundle_adjustment_.get());
+      if (ba->isInitializedWithExternalPrior())
+      {
+        update_res_ = processFrameBundle();
+      }
+      else
+      {
+        VLOG(6) << "Skip processing frame with bid = " << new_frames_->getBundleId()
+                << " because the backend is not finished initializing with the external prior.";
+      }
+    }
+    else
+    {
+      update_res_ = processFrameBundle();
+    }
 
     // We start the backend first, since it is the most time crirical
     if (bundle_adjustment_)
