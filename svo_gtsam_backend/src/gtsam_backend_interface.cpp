@@ -239,6 +239,8 @@ namespace svo
     {
       backend_.increaseTotalKeyframeCount();
       backend_.addPreintFactor(frame_bundle->getBundleId());
+
+      do_optimize_ = true;
     }
 
     bool success = false;
