@@ -155,8 +155,10 @@ namespace svo
       speed_and_bias.segment<3>(3) = bias.gyroscope();
       speed_and_bias.segment<3>(6) = bias.accelerometer();
 
-      VLOG(6) << "speed_and_bias\n"
-              << speed_and_bias;
+      VLOG(6) << std::setfill(' ') << "\nspeed_and_bias:\n"
+              << "  vel = " << speed.transpose() << "\n"
+              << "  gyr = " << bias.gyroscope().transpose() << "\n"
+              << "  acc = " << bias.accelerometer().transpose() << std::endl;
 
       return true;
     }
@@ -185,8 +187,10 @@ namespace svo
         }
       }
       T_WS = Transformation(pose.matrix());
-      VLOG(6) << "T_WS\n"
-              << T_WS;
+
+      VLOG(6) << std::setfill(' ') << "\nT_WS:\n"
+              << "  pos = " << pose.translation().transpose() << "\n"
+              << "  rpy = " << pose.rotation().rpy().transpose() << std::endl;
 
       return true;
     }
@@ -235,21 +239,24 @@ namespace svo
       return true;
     }
 
-    bool Estimator::addPreintFactor(const BundleId &bid, const gtsam::Point3 *const pos_prior)
+    bool Estimator::addPreintFactor(const BundleId &bid, const gtsam::Pose3 *const prior)
     {
       if (last_preint_factor_bid_ == -1)
       {
         // this will only be run the first time the function is called
-        if (pos_prior)
+        if (prior)
         {
-          gtsam::Pose3 prior(gtsam::Rot3::identity(), *pos_prior);
-          last_optim_state_ = gtsam::NavState(prior, gtsam::Vector3::Zero());
-          initial_values_.insert(X(bid), prior);
+          last_optim_state_ = gtsam::NavState(*prior, gtsam::Vector3::Zero());
+          initial_values_.insert(X(bid), *prior);
         }
 
-        initial_values_.insert(V(bid), gtsam::Vector3(0, 0, 0));
-        initial_values_.insert(B(bid), gtsam::imuBias::ConstantBias());
+        gtsam::Vector3 velocity_prior;
+        gtsam::imuBias::ConstantBias bias_prior;
+        initial_values_.insert(V(bid), velocity_prior);
+        initial_values_.insert(B(bid), bias_prior);
+
         last_preint_factor_bid_ = bid;
+
         return false;
       }
 
@@ -282,14 +289,21 @@ namespace svo
       return pred;
     }
 
-    bool Estimator::addExternalPositionPrior(BundleId bid, gtsam::Point3 prior)
+    bool Estimator::addExternalPosePrior(BundleId bid, gtsam::Pose3 prior)
     {
-      static const std::vector<size_t> indices = {3, 4, 5};
-      auto noise = gtsam::noiseModel::Isotropic::Sigma(3, 1e-6);
-      gtsam::PartialPriorFactor<gtsam::Pose3> prior_factor(X(bid), indices, prior, noise);
-      graph_.add<gtsam::PartialPriorFactor<gtsam::Pose3>>(prior_factor);
+      // when we only have position available as priors
+      // TODO: figure out how/if to handle this
+      // static const std::vector<size_t> indices = {3, 4, 5};
+      // auto noise = gtsam::noiseModel::Isotropic::Sigma(3, 1e-6);
+      // gtsam::PartialPriorFactor<gtsam::Pose3> prior_factor(X(bid), indices, prior, noise);
+      // graph_.add<gtsam::PartialPriorFactor<gtsam::Pose3>>(prior_factor);
 
-      // initial_values_.insert_or_assign(X(bid), prior);
+      // when we have position and orientation available as priors
+      auto noise = gtsam::noiseModel::Isotropic::Sigmas(
+          (gtsam::Vector(6) << 1e-2, 1e-2, 1e-2, 1e-3, 1e-3, 1e-3).finished() // rad, rad, rad, m, m, m
+      );
+      graph_.addPrior(X(bid), prior, noise);
+      initial_values_.insert_or_assign(X(bid), prior);
 
       return true;
     }

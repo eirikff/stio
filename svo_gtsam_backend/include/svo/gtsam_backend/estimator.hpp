@@ -1,6 +1,5 @@
 #pragma once
 
-#include <gtsam/nonlinear/ISAM2.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/geometry/Pose3.h>
@@ -171,7 +170,7 @@ namespace svo
        * @return true
        * @return false
        */
-      bool addPreintFactor(const BundleId &bid, const gtsam::Point3 *const pos_prior = nullptr);
+      bool addPreintFactor(const BundleId &bid, const gtsam::Pose3 *const prior = nullptr);
 
       /**
        * @brief Predicts using the IMU preintegration and associate the prediction
@@ -198,7 +197,7 @@ namespace svo
 
       inline void increaseTotalKeyframeCount() { total_keyframes_count_++; }
 
-      bool addExternalPositionPrior(BundleId bid, gtsam::Point3 prior);
+      bool addExternalPosePrior(BundleId bid, gtsam::Pose3 prior);
 
     protected: // members
       gtsam::NonlinearFactorGraph graph_;

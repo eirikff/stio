@@ -12,6 +12,7 @@
 #include <svo/common/transformation.h>
 
 #include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/TransformStamped.h>
 
 namespace svo
 {
@@ -91,7 +92,7 @@ namespace svo
         const sensor_msgs::ImageConstPtr &msg1);
     void imuCallback(const sensor_msgs::ImuConstPtr &imu_msg);
     void inputKeyCallback(const std_msgs::StringConstPtr &key_input);
-    void externalPositionCallback(const geometry_msgs::PointStamped::ConstPtr &msg);
+    void externalPositionCallback(const geometry_msgs::TransformStamped::ConstPtr &msg);
 
     // These functions are called before and after monoCallback or stereoCallback.
     // a derived class can implement some additional logic here.

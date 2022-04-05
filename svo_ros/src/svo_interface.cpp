@@ -449,9 +449,10 @@ namespace svo
     }
   }
 
-  void SvoInterface::externalPositionCallback(const geometry_msgs::PointStamped::ConstPtr &msg)
+  // TODO: how to support multiple types, e.g. TransformStamped and OdometryStamped, in the best way?
+  void SvoInterface::externalPositionCallback(const geometry_msgs::TransformStamped::ConstPtr &msg)
   {
-    gtsam_backend_interface_->addExternalPositionMessage(msg);
+    gtsam_backend_interface_->addExternalPoseMessage(msg);
   }
 
   void SvoInterface::subscribeImu()

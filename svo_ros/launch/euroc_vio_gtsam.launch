@@ -14,7 +14,7 @@
     <param name="imu_topic" value="/imu0" type="str" />
 
     <!-- External position reference topic -->
-    <param name="external_position_topic" value="/leica/position" type="str" />
+    <param name="external_position_topic" value="/vicon/firefly_sbx/firefly_sbx" type="str" />
 
     <!-- Camera calibration file -->
     <param name="calib_file" value="$(arg calib_file)" />

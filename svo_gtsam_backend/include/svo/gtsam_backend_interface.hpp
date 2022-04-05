@@ -14,7 +14,7 @@
 #include <svo/outlier_rejection.hpp>
 
 #include "svo/gtsam_backend/estimator.hpp"
-#include "svo/external_pos_handler.hpp"
+#include "svo/external_pose_handler.hpp"
 
 namespace svo
 {
@@ -192,9 +192,9 @@ namespace svo
     }
 
     template <typename MsgType>
-    inline void addExternalPositionMessage(const boost::shared_ptr<MsgType> &msg)
+    inline void addExternalPoseMessage(const boost::shared_ptr<MsgType> &msg)
     {
-      ext_pos_handler_.addPosition(msg);
+      ext_pose_handler_.addPose(msg);
     }
 
     bool isInitializedWithExternalPrior() const;
@@ -206,7 +206,7 @@ namespace svo
     std::unique_ptr<MotionDetector> motion_detector_;
     size_t no_motion_counter_;
     std::unique_ptr<OutlierRejection> outlier_rejection_;
-    ExternalPositionHandler<geometry_msgs::PointStamped> ext_pos_handler_; // TODO: make template type depend on parameters
+    ExternalPoseHandler<geometry_msgs::TransformStamped> ext_pose_handler_; // TODO: make template type depend on parameters
 
     // Threading
     mutable std::condition_variable wait_condition_;

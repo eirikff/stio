@@ -6,6 +6,7 @@
 #include <svo/imu_handler.h>
 #include <svo/global.h>
 #include <fstream>
+#include <iomanip>
 
 namespace svo
 {
@@ -144,7 +145,7 @@ namespace svo
 
     double ts = frame_bundle->getMinTimestampSeconds();
     VLOG(1) << "External prior at timestamp " << std::setprecision(17) << ts << ": \n"
-            << ext_pos_handler_.getPosition(ts).second;
+            << ext_pose_handler_.getPose(ts).second;
 
     if (!is_frontend_initialized_ && frame_bundle->at(0)->isKeyframe())
     {
@@ -244,7 +245,7 @@ namespace svo
     if (!is_frontend_initialized_)
     {
       double timestamp = frame_bundle->getMinTimestampSeconds();
-      gtsam::Point3 prior = ext_pos_handler_.getPosition(timestamp).second;
+      gtsam::Pose3 prior = ext_pose_handler_.getPose(timestamp).second;
 
       BundleId bid = frame_bundle->getBundleId();
       success = backend_.addPreintFactor(bid, &prior);
@@ -255,7 +256,7 @@ namespace svo
       VLOG(3) << "Added IMU preintegration factor for bid " << bid << " before front-end is initialized.";
 
       // need temporary variable to run function and avoid short-circuit evaluation
-      bool tmp = backend_.addExternalPositionPrior(bid, prior);
+      bool tmp = backend_.addExternalPosePrior(bid, prior);
       success = success && tmp;
 
       VLOG(3) << "Added external prior for bundle id " << bid
