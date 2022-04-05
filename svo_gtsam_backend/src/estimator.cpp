@@ -23,6 +23,14 @@ namespace svo
     {
       imu_params_ = params;
 
+      // TODO: this needs to be a parameter or estimated from data
+      // FOR EUROC VICON ROOM (T_imu_vicon = T_sensor_body)
+      gtsam::Rot3 rot(0.33638, -0.01749, 0.94156,
+                      -0.02078, -0.99972, -0.01114,
+                      0.94150, -0.01582, -0.33665);
+      gtsam::Point3 trans(0.06901, -0.02781, -0.12395);
+      params->int_param->body_P_sensor = gtsam::Pose3(rot, trans).inverse();
+
       preint_ = std::make_shared<gtsam::PreintegratedCombinedMeasurements>(params->int_param);
     }
 
@@ -205,7 +213,7 @@ namespace svo
 
     BundleId Estimator::optimize()
     {
-      graph_.print("FACTOR GRAPH: ");
+      // graph_.print("FACTOR GRAPH: ");
       // initial_values_.print("INITIAL VALUES: ");
 
       if (last_preint_factor_bid_ == -1)
@@ -215,6 +223,7 @@ namespace svo
       param.setVerbosityLM("SUMMARY");
       gtsam::LevenbergMarquardtOptimizer optimizer(graph_, initial_values_, param);
       result_ = optimizer.optimize();
+      initial_values_ = result_;
 
       last_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_preint_factor_bid_)),
                                           result_.at<gtsam::Vector3>(V(last_preint_factor_bid_)));
@@ -246,8 +255,9 @@ namespace svo
         // this will only be run the first time the function is called
 
         gtsam::Pose3 pose_prior;
-        gtsam::Vector3 velocity_prior;
-        gtsam::imuBias::ConstantBias bias_prior;
+        // TODO: velocity prior and bias prior values should come from parameters
+        gtsam::Vector3 velocity_prior(0, 0, 0);
+        gtsam::imuBias::ConstantBias bias_prior(gtsam::Vector6::Zero());
 
         if (prior)
         {
@@ -314,8 +324,8 @@ namespace svo
         first_ever_prior = false;
 
         // TODO: these values, both priors and sigmas, should come from parameters
-        gtsam::Vector3 velocity_prior;
-        gtsam::imuBias::ConstantBias bias_prior;
+        gtsam::Vector3 velocity_prior(0, 0, 0);
+        gtsam::imuBias::ConstantBias bias_prior(gtsam::Vector6::Zero());
         auto velocity_prior_noise = gtsam::noiseModel::Isotropic::Sigma(3, 1e-1);
         auto bias_prior_noise = gtsam::noiseModel::Isotropic::Sigma(6, 1e-2);
 
