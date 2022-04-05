@@ -88,8 +88,12 @@ namespace svo
 
     virtual void getLastState(ViNodeState *state) const = 0;
 
-    virtual bool isInitializedWithExternalPrior() const
+    virtual bool isInitializedWithExternalPrior(double time_threshold = 5.0) const
     {
+      // Need to set time_threshold's default value in this class is this is the
+      // function that is class, not the function from the derived class. See
+      // https://www.cplusplus.com/forum/general/16189/ for more info.
+
       // This is kinda a hack to get it to work without circular dependecies as
       // GtsamBackendInterface depends on the svo library, so the declaration
       // of class GtsamBackendInterface counld't be included here to cast the
@@ -102,8 +106,12 @@ namespace svo
       return true;
     }
 
+    virtual inline void setUseExternalPrior(bool b) { use_external_prior_ = b; }
+
   protected:
     BundleAdjustmentType type_ = BundleAdjustmentType::kNone;
+
+    bool use_external_prior_ = true;
   };
 
 } // namespace svo

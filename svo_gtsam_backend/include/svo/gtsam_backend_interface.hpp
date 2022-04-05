@@ -197,7 +197,13 @@ namespace svo
       ext_pose_handler_.addPose(msg);
     }
 
-    bool isInitializedWithExternalPrior() const;
+    bool isInitializedWithExternalPrior(double time_threshold = 5.0) const override;
+
+    void setUseExternalPrior(bool b) override
+    {
+      AbstractBundleAdjustment::setUseExternalPrior(b);
+      backend_.setUseExternalPrior(b);
+    }
 
   protected: // members
     // modules

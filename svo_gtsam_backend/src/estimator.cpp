@@ -306,6 +306,12 @@ namespace svo
 
     bool Estimator::addExternalPosePrior(BundleId bid, gtsam::Pose3 prior)
     {
+      if (!use_external_prior_)
+      {
+        VLOG(5) << "In addExternalPosePrior: use_external_prior is set to false, not adding prior.";
+        return false;
+      }
+
       // when we only have position available as priors
       // TODO: figure out how/if to handle this
       // static const std::vector<size_t> indices = {3, 4, 5};

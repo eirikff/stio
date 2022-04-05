@@ -199,6 +199,21 @@ namespace svo
 
       bool addExternalPosePrior(BundleId bid, gtsam::Pose3 prior);
 
+      /**
+       * @brief Get the time since the first external prior. This will be used to
+       * determine when to stop using the external prior.
+       *
+       * @return double Time in seconds
+       */
+      inline double getTimeSinceFirstExternalPrior() const
+      {
+        auto b = bid_timestamp_s_map_.cbegin();
+        auto e = --bid_timestamp_s_map_.cend();
+        return e->second - b->second;
+      }
+
+      inline void setUseExternalPrior(bool b) { use_external_prior_ = b; }
+
     protected: // members
       gtsam::NonlinearFactorGraph graph_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
@@ -216,6 +231,10 @@ namespace svo
       BundleId last_predict_bid_;
       gtsam::NavState last_optim_state_;
       gtsam::imuBias::ConstantBias last_optim_bias_;
+
+      bool use_external_prior_ = true;
+      double first_ext_prior_timestamp_ = 0;
+      double latest_ext_prior_timestamp_ = 0;
 
     protected: // functions
     };

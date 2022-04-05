@@ -531,12 +531,20 @@ namespace svo
     return false;
   }
 
-  bool GtsamBackendInterface::isInitializedWithExternalPrior() const
+  bool GtsamBackendInterface::isInitializedWithExternalPrior(double time_threshold) const
   {
     // TODO: return true when the backend has processed e.g. 5 seconds of IMU and
     //       external priors as that's the heuristic we'll use to determine if
     //       the backend is initialized.
-    return true;
+    double t = backend_.getTimeSinceFirstExternalPrior();
+    if (t >= time_threshold)
+    {
+      VLOG(1) << "Time since first external prior is " << t << " sec and has exceeded time threshold "
+              << time_threshold << " sec and is considered initialized.";
+      return true;
+    }
+    VLOG(10) << "Time since first external prior is: " << t << " sec. Remaining to threshold: " << time_threshold - t << std::endl;
+    return false;
   }
 
 } // namespace svo
