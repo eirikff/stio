@@ -143,9 +143,9 @@ namespace svo
     if (stop_thread_)
       return;
 
-    double ts = frame_bundle->getMinTimestampSeconds();
-    VLOG(1) << "External prior at timestamp " << std::setprecision(17) << ts << ": \n"
-            << ext_pose_handler_.getPose(ts).second;
+    // double ts = frame_bundle->getMinTimestampSeconds();
+    // VLOG(1) << "External prior at timestamp " << std::setprecision(17) << ts << ": \n"
+    //         << ext_pose_handler_.getPose(ts).second;
 
     if (!is_frontend_initialized_ && frame_bundle->at(0)->isKeyframe())
     {
@@ -261,7 +261,9 @@ namespace svo
 
       VLOG(3) << "Added external prior for bundle id " << bid
               << " at timestamp " << std::setprecision(17) << timestamp << ": \n"
-              << prior;
+              << std::setfill(' ')
+              << "  pos = " << prior.translation().transpose() << "\n"
+              << "  rpy = " << prior.rotation().rpy().transpose();
     }
 
     // last_added_nframe_images_ = frame_bundle->getBundleId();
@@ -323,6 +325,8 @@ namespace svo
     p->omega_max = calib.saturation_omega_max;
     p->rate = calib.imu_rate;
     p->delay_imu_cam = calib.delay_imu_cam;
+
+    // TODO: add body_P_sensor transform
 
     backend_.addImuParams(p);
   }
