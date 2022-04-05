@@ -206,7 +206,7 @@ namespace svo
     BundleId Estimator::optimize()
     {
       graph_.print("FACTOR GRAPH: ");
-      initial_values_.print("INITIAL VALUES: ");
+      // initial_values_.print("INITIAL VALUES: ");
 
       if (last_preint_factor_bid_ == -1)
         return false;
@@ -244,14 +244,18 @@ namespace svo
       if (last_preint_factor_bid_ == -1)
       {
         // this will only be run the first time the function is called
-        if (prior)
-        {
-          last_optim_state_ = gtsam::NavState(*prior, gtsam::Vector3::Zero());
-          initial_values_.insert(X(bid), *prior);
-        }
 
+        gtsam::Pose3 pose_prior;
         gtsam::Vector3 velocity_prior;
         gtsam::imuBias::ConstantBias bias_prior;
+
+        if (prior)
+        {
+          pose_prior = *prior;
+        }
+
+        last_optim_state_ = gtsam::NavState(pose_prior, velocity_prior);
+        initial_values_.insert(X(bid), pose_prior);
         initial_values_.insert(V(bid), velocity_prior);
         initial_values_.insert(B(bid), bias_prior);
 
@@ -303,7 +307,28 @@ namespace svo
           (gtsam::Vector(6) << 1e-2, 1e-2, 1e-2, 1e-3, 1e-3, 1e-3).finished() // rad, rad, rad, m, m, m
       );
       graph_.addPrior(X(bid), prior, noise);
-      initial_values_.insert_or_assign(X(bid), prior);
+
+      static bool first_ever_prior = true; // TODO: this could rather be handled by using one of the counters
+      if (first_ever_prior)
+      {
+        first_ever_prior = false;
+
+        // TODO: these values, both priors and sigmas, should come from parameters
+        gtsam::Vector3 velocity_prior;
+        gtsam::imuBias::ConstantBias bias_prior;
+        auto velocity_prior_noise = gtsam::noiseModel::Isotropic::Sigma(3, 1e-1);
+        auto bias_prior_noise = gtsam::noiseModel::Isotropic::Sigma(6, 1e-2);
+
+        graph_.addPrior(V(bid), velocity_prior, velocity_prior_noise);
+        graph_.addPrior(B(bid), bias_prior, bias_prior_noise);
+
+        // since this sets the priors for x0 we need to reset the preintegration so successive
+        // calls calculates the preintegration between x0 and x1, not "x-1" and x1 (i.e. from before
+        // the very first variable)
+        preint_->resetIntegrationAndSetBias(bias_prior);
+
+        VLOG(2) << "Added initial zero velocity and bias priors for bid " << bid << " to constrain problem.";
+      }
 
       return true;
     }
