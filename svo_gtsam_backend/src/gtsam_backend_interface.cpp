@@ -314,7 +314,8 @@ namespace svo
 
     const ImuCalibration &calib = imu_handler_->imu_calib_;
     // TODO: which direction should gravity_magnitude be? + or - coeff?
-    auto p = std::make_shared<gtsam_backend::ImuParameters>(gtsam::Vector3(0, 0, calib.gravity_magnitude));
+    auto p = std::make_shared<gtsam_backend::ImuParameters>(gtsam::Vector3(0, 0, -calib.gravity_magnitude));
+    p->int_param = gtsam::PreintegrationCombinedParams::MakeSharedU(calib.gravity_magnitude);
     p->int_param->accelerometerCovariance = gtsam::I_3x3 * calib.acc_noise_density * calib.acc_noise_density;
     p->int_param->gyroscopeCovariance = gtsam::I_3x3 * calib.gyro_noise_density * calib.gyro_noise_density;
     p->int_param->biasAccCovariance = gtsam::I_3x3 * calib.acc_bias_random_walk_sigma * calib.acc_bias_random_walk_sigma;
