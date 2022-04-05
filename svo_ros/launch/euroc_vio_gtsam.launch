@@ -1,6 +1,6 @@
 <!-- Launch File for running svo with ceres backend from bag-file -->
 <launch>
-  <arg name="calib_file" default="$(find svo_ros)/param/calib/euroc_mono.yaml"/>
+  <arg name="calib_file" default="$(find svo_ros)/param/calib/euroc_mono_gtsam.yaml"/>
 
   <!-- SVO node -->
   <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" args="--v=0" >
