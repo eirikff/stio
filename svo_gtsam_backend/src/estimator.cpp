@@ -223,6 +223,7 @@ namespace svo
       param.setVerbosityLM("SUMMARY");
       gtsam::LevenbergMarquardtOptimizer optimizer(graph_, initial_values_, param);
       result_ = optimizer.optimize();
+      std::cout << std::endl;
       initial_values_ = result_;
 
       last_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_preint_factor_bid_)),
