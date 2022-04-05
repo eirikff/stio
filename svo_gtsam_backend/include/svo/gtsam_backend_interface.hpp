@@ -48,9 +48,9 @@ namespace svo
 
     // TODO: what does these sigma parameters *actually* mean?
     /// Sigma for the uncertainty in the integration.
-    double preintegration_sigma = 1e-1;
+    double preintegration_sigma = 1e-4;
     /// Sigma for the bias used for pre-integration.
-    double bias_preintegration_sigma = 1e-1;
+    double bias_preintegration_sigma = 1e-4;
 
     /// Minimum number of observations a landmark must have to be added to the
     /// backend.
