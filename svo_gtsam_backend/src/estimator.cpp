@@ -9,6 +9,7 @@
 #include <gtsam_unstable/slam/PartialPriorFactor.h>
 
 #include <iostream>
+#include <algorithm>
 
 namespace svo
 {
@@ -103,26 +104,39 @@ namespace svo
       return true;
     }
 
-    bool Estimator::addLandmark(const PointPtr &point)
+    bool Estimator::addProjectionFactors(const PointPtr &landmark)
     {
-      int id = point->id();
-
-      initial_values_.insert(L(id), point->pos());
-
-      return true;
-    }
-
-    bool Estimator::addObservation(const FramePtr &frame, size_t kp_idx)
-    {
-      PointPtr &p = frame->landmark_vec_[kp_idx];
-
-      gtsam::Point2 meas = frame->px_vec_.col(kp_idx);
       //  TODO: make noise sigma value parameter/option
-      auto noise = gtsam::noiseModel::Isotropic::Sigma(2, 1);
+      auto noise = gtsam::noiseModel::Isotropic::Sigma(2, 1); // px
 
-      graph_.emplace_shared<
-          gtsam::GenericProjectionFactor<gtsam::Pose3, gtsam::Point3, CamParameters::Calibration>>(
-          meas, noise, X(frame->bundleId()), L(p->id()), cam_params_->K, cam_params_->T_C_B);
+      for (auto &obsv : landmark->obs_)
+      {
+        BundleId bid = obsv.frame_id; // frame_id = bundle id of frame the obsv is from
+        int lm_id = landmark->id();   // id is the point's/landmark's unique id
+
+        if (!isObservationInBackend(bid, lm_id))
+        {
+          if (auto f = obsv.frame.lock()) // gets shared_ptr of frame and checks if it's not nullptr
+          {
+            // keypoint_index is the index of the landmark in the frame's landmark vector
+            gtsam::Point2 meas = f->px_vec_.col(obsv.keypoint_index_);
+
+            graph_.emplace_shared<gtsam::GenericProjectionFactor<gtsam::Pose3, gtsam::Point3, CamParameters::Calibration>>(
+                meas, noise, X(bid), L(lm_id), cam_params_->K, cam_params_->T_C_B);
+
+            addObservationToObservationMap(bid, lm_id);
+
+            if (!initial_values_.exists(L(lm_id)))
+            {
+              initial_values_.insert(L(lm_id), landmark->pos());
+            }
+          }
+          else
+          {
+            LOG(WARNING) << "Frame with bid = " << bid << " is nullptr in addObservation.";
+          }
+        }
+      }
 
       return true;
     }
@@ -348,6 +362,27 @@ namespace svo
       }
 
       return true;
+    }
+
+    bool Estimator::isObservationInBackend(BundleId bid, int landmark_id) const
+    {
+      try
+      {
+        auto &obsv = landmark_obsv_states_.at(L(landmark_id));
+
+        if (std::find(obsv.cbegin(), obsv.cend(), X(bid)) != obsv.cend())
+        {
+          return true;
+        }
+
+        return false;
+      }
+      catch (const std::out_of_range &)
+      {
+        return false;
+      }
+
+      return false;
     }
 
   } // namespace gtsam_backend

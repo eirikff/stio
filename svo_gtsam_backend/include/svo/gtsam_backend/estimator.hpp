@@ -87,24 +87,14 @@ namespace svo
       bool addImuMeasurements(const ImuMeasurements &meas);
 
       /**
-       * @brief Add new landmark to the factor graph if it don't already exists.
+       * @brief Add observations of landmark if it's not already added. An observation
+       * is the same as a projection factor between a frame and a landmark.
        *
-       * @param point Point to add.
+       * @param landmark Point object of landmark to add.
        * @return true on success.
        * @return false on failure.
        */
-      bool addLandmark(const PointPtr &point);
-
-      /**
-       * @brief Add new landmark observation, i.e. reprojection factors between
-       * frame node and landmark node.
-       *
-       * @param frame Frame with landmark oberservation to add.
-       * @param kp_idx Index of keypoint to add.
-       * @return true on success.
-       * @return false on failure. (e.g. if the frame id or landmark id is not a node)
-       */
-      bool addObservation(const FramePtr &frame, size_t kp_idx);
+      bool addProjectionFactors(const PointPtr &landmark);
 
       /**
        * @brief Removes landmark observation from factor graph.
@@ -226,6 +216,11 @@ namespace svo
       std::map<BundleId, double> bid_timestamp_s_map_;
       size_t total_keyframes_count_ = 0;
 
+      // map storing which states a particular landmark is observed from.
+      // key is landmark key (i.e. L(p->id())) and value is a vector of state
+      // keys (i.e. X(bundle_id)).
+      std::map<gtsam::Key, std::vector<gtsam::Key>> landmark_obsv_states_;
+
       // for preintegration factor
       BundleId last_preint_factor_bid_ = -1;
       BundleId last_predict_bid_;
@@ -237,6 +232,12 @@ namespace svo
       double latest_ext_prior_timestamp_ = 0;
 
     protected: // functions
+      bool isObservationInBackend(BundleId bid, int landmark_id) const;
+
+      inline void addObservationToObservationMap(BundleId bid, int landmark_id)
+      {
+        landmark_obsv_states_[L(landmark_id)].push_back(X(bid));
+      }
     };
   } // namespace gtsam_backend
 
