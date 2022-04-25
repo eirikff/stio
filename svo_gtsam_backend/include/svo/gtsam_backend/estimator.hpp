@@ -50,7 +50,7 @@ namespace svo
 
       // TODO: this calibration definition assumes radial-tangental distortion. change to also support equidistant/fisheye
       Calibration::shared_ptr K;
-      gtsam::Pose3 T_C_B; // transformation between camera and body frame
+      gtsam::Pose3 T_body_sensor; // pose of camera sensor with respect to body
     };
 
     // [velocity, gyro biases, accel biases]

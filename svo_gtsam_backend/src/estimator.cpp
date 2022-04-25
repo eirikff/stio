@@ -30,8 +30,8 @@ namespace svo
                       -0.02078, -0.99972, -0.01114,
                       0.94150, -0.01582, -0.33665);
       gtsam::Point3 trans(0.06901, -0.02781, -0.12395);
-      gtsam::Pose3 T_sensor_body(rot, trans);
-      params->int_param->body_P_sensor = T_sensor_body.inverse();
+      gtsam::Pose3 T_imu_vicon(rot, trans);
+      params->int_param->body_P_sensor = T_imu_vicon.inverse();
 
       preint_ = std::make_shared<gtsam::PreintegratedCombinedMeasurements>(params->int_param);
     }
@@ -63,21 +63,14 @@ namespace svo
       double fx = K(0), fy = K(1), cx = K(2), cy = K(3);
       double k1 = d(0), k2 = d(1), p1 = d(2), p2 = d(3);
 
-      gtsam::Rot3 rot(0.33638, -0.01749, 0.94156,
-                      -0.02078, -0.99972, -0.01114,
-                      0.94150, -0.01582, -0.33665);
-      gtsam::Point3 trans(0.06901, -0.02781, -0.12395);
-      gtsam::Pose3 T_sensor_body(rot, trans);
+      auto T_C_B_vk = camera_bundle->get_T_C_B(0);
+      auto T_C_B_gtsam = gtsam::Pose3(gtsam::Rot3(T_C_B_vk.getEigenQuaternion()), T_C_B_vk.getPosition());
 
-      auto T_C_B = camera_bundle->get_T_C_B(0);
-      auto quat = T_C_B.getEigenQuaternion();
-      auto trans = T_C_B.getPosition();
-
-      // TODO: since body is redefined to be vicon marker and not imu, need to
+      // since body is redefined to be vicon marker and not imu, need to
       // find transform between body (vicon) and camera instead of imu and camera.
       cam_params_ = std::make_shared<gtsam_backend::CamParameters>();
       cam_params_->K.reset(new gtsam::Cal3DS2(fx, fy, 0, cx, cy, k1, k2, p1, p2));
-      cam_params_->T_C_B = gtsam::Pose3(gtsam::Rot3(quat), trans);
+      cam_params_->T_body_sensor = T_C_B_gtsam.inverse();
 
       LOG(INFO) << "Camera parameters loaded to gtsam_backend::Estimator.";
     }
@@ -131,7 +124,7 @@ namespace svo
             gtsam::Point2 meas = f->px_vec_.col(obsv.keypoint_index_);
 
             graph_.emplace_shared<gtsam::GenericProjectionFactor<gtsam::Pose3, gtsam::Point3, CamParameters::Calibration>>(
-                meas, noise, X(bid), L(lm_id), cam_params_->K, cam_params_->T_C_B);
+                meas, noise, X(bid), L(lm_id), cam_params_->K, false, true, cam_params_->T_body_sensor);
 
             addObservationToObservationMap(bid, lm_id);
 
