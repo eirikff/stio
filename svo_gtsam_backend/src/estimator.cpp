@@ -8,6 +8,8 @@
 
 #include <gtsam_unstable/slam/PartialPriorFactor.h>
 
+#include <boost/optional/optional_io.hpp>
+
 #include <iostream>
 #include <algorithm>
 
@@ -18,6 +20,9 @@ namespace svo
     Estimator::Estimator()
         : last_preint_factor_bid_(-1)
     {
+      gtsam::ISAM2Params params;
+      params.evaluateNonlinearError = true;
+      isam_ = std::make_shared<gtsam::ISAM2>(params);
     }
 
     void Estimator::addImuParams(const gtsam_backend::ImuParameters::shared_ptr params)
@@ -126,12 +131,13 @@ namespace svo
             graph_.emplace_shared<gtsam::GenericProjectionFactor<gtsam::Pose3, gtsam::Point3, CamParameters::Calibration>>(
                 meas, noise, X(bid), L(lm_id), cam_params_->K, false, true, cam_params_->T_body_sensor);
 
-            addObservationToObservationMap(bid, lm_id);
-
-            if (!initial_values_.exists(L(lm_id)))
+            // only add initial value if landmark has not been observed before
+            if (landmark_obsv_states_.find(L(lm_id)) == landmark_obsv_states_.end())
             {
               initial_values_.insert(L(lm_id), landmark->pos());
             }
+
+            addObservationToObservationMap(bid, lm_id);
           }
           else
           {
@@ -235,12 +241,17 @@ namespace svo
       if (last_preint_factor_bid_ == -1)
         return false;
 
-      gtsam::LevenbergMarquardtParams param;
-      param.setVerbosityLM("SUMMARY");
-      gtsam::LevenbergMarquardtOptimizer optimizer(graph_, initial_values_, param);
-      result_ = optimizer.optimize();
+      const gtsam::ISAM2Result res = isam_->update(graph_, initial_values_);
+      // isam_->update();
+      res.print("GTSAM BACKEND ISAM RESULTS: ");
+      std::cout << "Error before: " << res.errorBefore << "\n";
+      std::cout << "Error after: " << res.errorAfter << "\n";
       std::cout << std::endl;
-      initial_values_ = result_;
+
+      graph_.resize(0);
+      initial_values_.clear();
+
+      result_ = isam_->calculateEstimate();
 
       last_optim_state_ = gtsam::NavState(result_.at<gtsam::Pose3>(X(last_preint_factor_bid_)),
                                           result_.at<gtsam::Vector3>(V(last_preint_factor_bid_)));

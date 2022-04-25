@@ -9,6 +9,7 @@
 #include <gtsam/slam/ProjectionFactor.h>
 #include <gtsam/geometry/Cal3DS2.h>
 #include <gtsam/inference/Symbol.h>
+#include <gtsam/nonlinear/ISAM2.h>
 
 #include <svo/global.h>
 #include <svo/vio_common/backend_types.hpp>
@@ -206,6 +207,7 @@ namespace svo
 
     protected: // members
       gtsam::NonlinearFactorGraph graph_;
+      std::shared_ptr<gtsam::ISAM2> isam_;
       gtsam_backend::ImuParameters::shared_ptr imu_params_;
       gtsam_backend::CamParameters::shared_ptr cam_params_;
       std::shared_ptr<gtsam::PreintegratedCombinedMeasurements> preint_;
