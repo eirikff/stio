@@ -25,14 +25,14 @@ quality_min_fts: 40
 map_scale: 1.5
 
 # Initial rotation
-T_world_imuinit/qx: 0
-T_world_imuinit/qy: 0
-T_world_imuinit/qz: 0
-T_world_imuinit/qw: 1
-# from leica
-T_world_imuinit/tx: 4.659078056543224
-T_world_imuinit/ty: -1.702492097949717
-T_world_imuinit/tz: 0.677316778796989
+T_world_imuinit/qx: -0.00850128791674782
+T_world_imuinit/qy: 0.023182723989468027
+T_world_imuinit/qz: 0.11323128136105197
+T_world_imuinit/qw: 0.9932617813716176
+# from vicon
+T_world_imuinit/tx: 0.7866758095951552
+T_world_imuinit/ty: 2.1763316360688414
+T_world_imuinit/tz: 1.0637436888855387
 
 # Keyframe selection
 kfselect_criterion: FORWARD    # alterntive: DOWNLOOKING
