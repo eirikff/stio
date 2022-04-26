@@ -205,6 +205,18 @@ namespace svo
 
       inline void setUseExternalPrior(bool b) { use_external_prior_ = b; }
 
+      const gtsam::Values &getOptimizationResults() const { return result_; }
+
+      const std::vector<gtsam::Key> getBackendLandmarkKeys() const
+      {
+        std::vector<gtsam::Key> keys(landmark_obsv_states_.size());
+        for (auto it = landmark_obsv_states_.cbegin(); it != landmark_obsv_states_.cend(); it++)
+        {
+          keys.push_back(it->first);
+        }
+        return keys;
+      }
+
     protected: // members
       gtsam::NonlinearFactorGraph graph_;
       std::shared_ptr<gtsam::ISAM2> isam_;

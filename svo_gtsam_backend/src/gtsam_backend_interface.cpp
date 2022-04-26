@@ -406,7 +406,12 @@ namespace svo
 
         if (publisher_)
         {
-          publisher_->publish();
+          publisher_->publish(
+              last_state_,
+              backend_.getOptimizationResults(),
+              backend_.getBackendLandmarkKeys(),
+              backend_.getTimestampSeconds(last_optimized_bid_),
+              last_optimized_bid_);
         }
 
         // TODO: publish

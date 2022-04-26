@@ -106,7 +106,7 @@ namespace svo
       {
         svo_->setBundleAdjuster(gtsam_backend_interface_);
         gtsam_backend_interface_->setImuHandler(imu_handler_);
-        // gtsam_backend_interface_->makePublisher();
+        gtsam_backend_interface_->makePublisher(pnh_);
         gtsam_backend_interface_->startThread();
       }
       else
