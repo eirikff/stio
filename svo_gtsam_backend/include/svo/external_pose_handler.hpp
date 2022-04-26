@@ -1,6 +1,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <gtsam/geometry/Point3.h>
 
 namespace svo
@@ -15,6 +16,11 @@ namespace svo
   {
   public: // functions
     ExternalPoseHandler() = default;
+    ExternalPoseHandler(ros::NodeHandle &nh)
+    {
+      pub_ext_pos_ = std::make_unique<ros::Publisher>();
+      *pub_ext_pos_ = nh.advertise<geometry_msgs::PoseStamped>("external_pose", 10);
+    }
 
     /**
      * @brief Get the position as timestamp @arg timestamp, interpolating if possible
@@ -63,6 +69,27 @@ namespace svo
       double ts = msg->header.stamp.toSec();
 
       messages_.insert({ts, p});
+
+      if (pub_ext_pos_)
+      {
+        static uint32_t seq = 0;
+        seq++;
+
+        geometry_msgs::PoseStamped m;
+        m.header.frame_id = "world";
+        m.header.stamp = msg->header.stamp;
+        m.header.seq = seq;
+
+        m.pose.orientation.w = p.rotation().quaternion().w();
+        m.pose.orientation.x = p.rotation().quaternion().x();
+        m.pose.orientation.y = p.rotation().quaternion().y();
+        m.pose.orientation.z = p.rotation().quaternion().z();
+        m.pose.position.x = p.translation().x();
+        m.pose.position.y = p.translation().y();
+        m.pose.position.z = p.translation().z();
+
+        pub_ext_pos_->publish(m);
+      }
     }
 
   public:    // member
@@ -93,6 +120,8 @@ namespace svo
 
   protected:                                  // members
     std::map<double, gtsam::Pose3> messages_; // key is timestamp in seconds
+
+    std::unique_ptr<ros::Publisher> pub_ext_pos_;
   };
 
 } // namespace svo

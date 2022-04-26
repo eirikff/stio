@@ -75,10 +75,12 @@ namespace svo
     GtsamBackendOptions backend_options_;
 
   public: // functions
-    GtsamBackendInterface(const GtsamBackendInterfaceOptions &options,
-                          const GtsamBackendOptions &backend_options,
-                          const MotionDetectorOptions &motion_detector_options,
-                          const CameraBundlePtr &camera_bundle);
+    GtsamBackendInterface(
+        ros::NodeHandle &nh,
+        const GtsamBackendInterfaceOptions &options,
+        const GtsamBackendOptions &backend_options,
+        const MotionDetectorOptions &motion_detector_options,
+        const CameraBundlePtr &camera_bundle);
 
     ~GtsamBackendInterface();
 

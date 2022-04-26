@@ -11,11 +11,12 @@
 namespace svo
 {
   GtsamBackendInterface::GtsamBackendInterface(
+      ros::NodeHandle &nh,
       const GtsamBackendInterfaceOptions &options,
       const GtsamBackendOptions &backend_options,
       const MotionDetectorOptions &motion_detector_options,
       const CameraBundlePtr &camera_bundle)
-      : options_(options), backend_options_(backend_options), publisher_(nullptr)
+      : options_(options), backend_options_(backend_options), ext_pose_handler_(nh), publisher_(nullptr)
   {
     type_ = BundleAdjustmentType::kGtsam;
 
