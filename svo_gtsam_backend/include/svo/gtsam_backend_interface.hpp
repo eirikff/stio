@@ -15,6 +15,7 @@
 
 #include "svo/gtsam_backend/estimator.hpp"
 #include "svo/external_pose_handler.hpp"
+#include "svo/gtsam_backend_publisher.hpp"
 
 namespace svo
 {
@@ -118,6 +119,11 @@ namespace svo
      * @brief Stop and join optimization thread.
      */
     void quitThread() override;
+
+    void makePublisher(const ros::NodeHandle &nh)
+    {
+      publisher_ = std::make_shared<GtsamBackendPublisher>(nh);
+    }
 
     // set correction transformation to be applied
     inline void setCorrectionInWorld(const Transformation & /*w_T_correction*/) override
@@ -236,7 +242,7 @@ namespace svo
 
     // visualization
     ViNodeState last_state_;
-    // CeresBackendPublisher::Ptr publisher_;
+    GtsamBackendPublisher::Ptr publisher_;
 
     // fixation
     bool image_motion_detector_stationary_ = false;

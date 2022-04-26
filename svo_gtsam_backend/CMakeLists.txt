@@ -29,11 +29,13 @@ set(HEADERS
   include/svo/gtsam_backend_interface.hpp
   include/svo/gtsam_backend/estimator.hpp
   include/svo/external_pose_handler.hpp
+  include/svo/gtsam_backend_publisher.hpp
   )
 
 set(SOURCES
   src/gtsam_backend_interface.cpp
   src/estimator.cpp
+  src/gtsam_backend_publisher.cpp
   )
 
 cs_add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})

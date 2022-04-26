@@ -15,7 +15,7 @@ namespace svo
       const GtsamBackendOptions &backend_options,
       const MotionDetectorOptions &motion_detector_options,
       const CameraBundlePtr &camera_bundle)
-      : options_(options), backend_options_(backend_options)
+      : options_(options), backend_options_(backend_options), publisher_(nullptr)
   {
     type_ = BundleAdjustmentType::kGtsam;
 
@@ -403,6 +403,11 @@ namespace svo
         last_state_.set_W_v_B(speed_and_bias.head<3>());
         last_state_.setGyroBias(speed_and_bias.segment<3>(3));
         last_state_.setAccBias(speed_and_bias.tail<3>());
+
+        if (publisher_)
+        {
+          publisher_->publish();
+        }
 
         // TODO: publish
       } // release backend mutex
