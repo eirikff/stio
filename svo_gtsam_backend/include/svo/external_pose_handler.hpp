@@ -80,13 +80,18 @@ namespace svo
         m.header.stamp = msg->header.stamp;
         m.header.seq = seq;
 
-        m.pose.orientation.w = p.rotation().quaternion().w();
-        m.pose.orientation.x = p.rotation().quaternion().x();
-        m.pose.orientation.y = p.rotation().quaternion().y();
-        m.pose.orientation.z = p.rotation().quaternion().z();
-        m.pose.position.x = p.translation().x();
-        m.pose.position.y = p.translation().y();
-        m.pose.position.z = p.translation().z();
+        auto q = p.rotation().quaternion();
+        auto t = p.translation();
+
+        // for some reason, the elements of the quaternion needs to be rearranged like
+        // this so the order matches what ros/rviz expects
+        m.pose.orientation.w = q.x();
+        m.pose.orientation.x = q.y();
+        m.pose.orientation.y = q.z();
+        m.pose.orientation.z = q.w();
+        m.pose.position.x = t.x();
+        m.pose.position.y = t.y();
+        m.pose.position.z = t.z();
 
         pub_ext_pos_->publish(m);
       }
