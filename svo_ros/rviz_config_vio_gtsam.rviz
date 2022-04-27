@@ -26,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: /svo/image/0
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -51,6 +51,15 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 0.5
+      Class: rviz/Axes
+      Enabled: true
+      Length: 0.15000000596046448
+      Name: Origin
+      Radius: 0.029999999329447746
+      Reference Frame: <Fixed Frame>
+      Show Trail: false
       Value: true
     - Class: rviz/TF
       Enabled: false
