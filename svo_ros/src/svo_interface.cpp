@@ -96,9 +96,6 @@ namespace svo
       GtsamBackendOptions backend_options;
       MotionDetectorOptions motion_detection_options;
 
-      options.use_outlier_rejection = false;
-      options.use_zero_motion_detection = false;
-
       gtsam_backend_interface_ = std::make_shared<GtsamBackendInterface>(
           pnh_, options, backend_options, motion_detection_options, ncam_);
 
