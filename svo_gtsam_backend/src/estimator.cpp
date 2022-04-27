@@ -166,7 +166,7 @@ namespace svo
         speed = result_.at<gtsam::Vector3>(V(bid));
         bias = result_.at<gtsam::imuBias::ConstantBias>(B(bid));
 
-        VLOG(6) << "Got speed and bias for bid " << bid << " using results_.";
+        VLOG(12) << "Got speed and bias for bid " << bid << " using results_.";
       }
       catch (const gtsam::ValuesKeyDoesNotExist &)
       {
@@ -175,7 +175,7 @@ namespace svo
           speed = predictions_.at<gtsam::Vector3>(V(bid));
           bias = predictions_.at<gtsam::imuBias::ConstantBias>(B(bid));
 
-          VLOG(6) << "Got speed and bias for bid " << bid << " using predictions_.";
+          VLOG(12) << "Got speed and bias for bid " << bid << " using predictions_.";
         }
         catch (const gtsam::ValuesKeyDoesNotExist &)
         {
@@ -187,10 +187,10 @@ namespace svo
       speed_and_bias.segment<3>(3) = bias.gyroscope();
       speed_and_bias.segment<3>(6) = bias.accelerometer();
 
-      VLOG(6) << std::setfill(' ') << "\nspeed_and_bias:\n"
-              << "  vel = " << speed.transpose() << "\n"
-              << "  gyr = " << bias.gyroscope().transpose() << "\n"
-              << "  acc = " << bias.accelerometer().transpose() << std::endl;
+      VLOG(12) << std::setfill(' ') << "\nspeed_and_bias:\n"
+               << "  vel = " << speed.transpose() << "\n"
+               << "  gyr = " << bias.gyroscope().transpose() << "\n"
+               << "  acc = " << bias.accelerometer().transpose() << std::endl;
 
       return true;
     }
@@ -202,7 +202,7 @@ namespace svo
       {
         pose = result_.at<gtsam::Pose3>(X(bid));
 
-        VLOG(6) << "Got T_WS for bid " << bid << " using results_.";
+        VLOG(12) << "Got T_WS for bid " << bid << " using results_.";
       }
       catch (const gtsam::ValuesKeyDoesNotExist &)
       {
@@ -210,7 +210,7 @@ namespace svo
         {
           pose = predictions_.at<gtsam::Pose3>(X(bid));
 
-          VLOG(6) << "Got T_WS for bid " << bid << " using predictions_.";
+          VLOG(12) << "Got T_WS for bid " << bid << " using predictions_.";
         }
         catch (const gtsam::ValuesKeyDoesNotExist &)
         {
@@ -220,9 +220,9 @@ namespace svo
       }
       T_WS = Transformation(pose.matrix());
 
-      VLOG(6) << std::setfill(' ') << "\nT_WS:\n"
-              << "  pos = " << pose.translation().transpose() << "\n"
-              << "  rpy = " << pose.rotation().rpy().transpose() << std::endl;
+      VLOG(12) << std::setfill(' ') << "\nT_WS:\n"
+               << "  pos = " << pose.translation().transpose() << "\n"
+               << "  rpy = " << pose.rotation().rpy().transpose() << std::endl;
 
       return true;
     }
