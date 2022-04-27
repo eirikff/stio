@@ -209,7 +209,7 @@ namespace svo
 
       const std::vector<gtsam::Key> getBackendLandmarkKeys() const
       {
-        std::vector<gtsam::Key> keys(landmark_obsv_states_.size());
+        std::vector<gtsam::Key> keys;
         for (auto it = landmark_obsv_states_.cbegin(); it != landmark_obsv_states_.cend(); it++)
         {
           keys.push_back(it->first);
