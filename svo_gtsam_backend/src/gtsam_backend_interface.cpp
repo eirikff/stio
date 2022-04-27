@@ -103,6 +103,8 @@ namespace svo
       n_frames_updated++;
     }
 
+    updateAllActiveLandmarks();
+
     // Update last frame bundle
     for (const FramePtr &last_frame : *last_frames)
     {
@@ -523,6 +525,8 @@ namespace svo
         LOG(WARNING) << "Failed to add projection factors.";
         continue;
       }
+
+      active_landmarks_.push_back(landmark);
     }
 
     return false;
@@ -542,6 +546,17 @@ namespace svo
     }
     VLOG(10) << "Time since first external prior is: " << t << " sec. Remaining to threshold: " << time_threshold - t << std::endl;
     return false;
+  }
+
+  bool GtsamBackendInterface::updateAllActiveLandmarks()
+  {
+    for (PointPtr &landmark : active_landmarks_)
+    {
+      backend_.updateLandmarkPosition(landmark);
+      VLOG(9) << "Updated landmark position for landmark with id = " << landmark->id();
+    }
+
+    return true;
   }
 
 } // namespace svo

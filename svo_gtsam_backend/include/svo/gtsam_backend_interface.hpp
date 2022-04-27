@@ -242,6 +242,8 @@ namespace svo
 
     ImuMeasurements latest_imu_meas_;
 
+    std::vector<PointPtr> active_landmarks_;
+
     // visualization
     ViNodeState last_state_;
     GtsamBackendPublisher::Ptr publisher_;
@@ -297,5 +299,7 @@ namespace svo
      * @return false On failure.
      */
     bool addLandmarksAndObservationsToBackend(const FramePtr &frame);
+
+    bool updateAllActiveLandmarks();
   };
 } // namespace svo

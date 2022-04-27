@@ -146,6 +146,8 @@ namespace svo
         }
       }
 
+      landmark->in_ba_graph_ = true;
+
       return true;
     }
 
@@ -392,6 +394,27 @@ namespace svo
       }
       catch (const std::out_of_range &)
       {
+        return false;
+      }
+
+      return false;
+    }
+
+    bool Estimator::updateLandmarkPosition(const PointPtr landmark) const
+    {
+      try
+      {
+        gtsam::Point3 p = result_.at<gtsam::Point3>(L(landmark->id()));
+
+        landmark->pos_.x() = p.x();
+        landmark->pos_.y() = p.y();
+        landmark->pos_.z() = p.z();
+
+        return true;
+      }
+      catch (const gtsam::ValuesKeyDoesNotExist &e)
+      {
+        VLOG(8) << "Couldn't get estimate of landmark " << gtsam::key_formatter(gtsam::DefaultKeyFormatter) << e.key();
         return false;
       }
 

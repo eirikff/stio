@@ -217,6 +217,8 @@ namespace svo
         return keys;
       }
 
+      bool updateLandmarkPosition(const PointPtr landmark) const;
+
     protected: // members
       gtsam::NonlinearFactorGraph graph_;
       std::shared_ptr<gtsam::ISAM2> isam_;
