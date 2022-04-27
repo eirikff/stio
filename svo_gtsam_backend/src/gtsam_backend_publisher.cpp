@@ -74,8 +74,8 @@ namespace svo
     }
     VLOG(100) << "Publish Backend Landmarks for bid " << bid << " at timestmap " << timestamp_s;
 
-    std::vector<gtsam::Point3> landmarks(lm_keys.size());
-    std::vector<int> landmark_ids(lm_keys.size());
+    std::vector<gtsam::Point3> landmarks;
+    std::vector<int> landmark_ids;
     for (const gtsam::Key &k : lm_keys)
     {
       try
