@@ -89,7 +89,8 @@ namespace svo
     //   VLOG(3) << "No map update available.";
     //   return;
     // }
-    return; // TODO: this is only for debugging!
+    // TODO: what to do here? is this check necessary?
+    VLOG(3) << "UPDATING USING BACKEND";
 
     // Update active keyframes with latest estimate
     int n_frames_updated = 0;
@@ -106,12 +107,16 @@ namespace svo
     updateAllActiveLandmarks();
 
     // Update last frame bundle
-    for (const FramePtr &last_frame : *last_frames)
+    if (last_frames)
     {
-      // ceres backend only updates if last_frame is *not* keyframe, why?
-      // TODO: should gtsam backend also only update when not keyframe?
-      // need better understanding of what last_frames actually are.
-      updateFrameStateWithBackend(last_frame, true);
+      for (const FramePtr &last_frame : *last_frames)
+      {
+        if (!last_frame->isKeyframe())
+          // ceres backend only updates if last_frame is *not* keyframe, why?
+          // TODO: should gtsam backend also only update when not keyframe?
+          // need better understanding of what last_frames actually are.
+          updateFrameStateWithBackend(last_frame, true);
+      }
     }
 
     if (outlier_rejection_ && last_frames)
@@ -131,11 +136,14 @@ namespace svo
               << " edgelets and " << n_deleted_corners << " corners.";
     }
 
-    gtsam_backend::SpeedAndBias speed_and_bias;
-    // gets the latest speed and bias estimate for last_frames (likely from the preintegration)
-    success = backend_.getSpeedAndBias(last_frames->getBundleId(), speed_and_bias);
-    imu_handler_->setAccelerometerBias(speed_and_bias.tail<3>());
-    imu_handler_->setGyroscopeBias(speed_and_bias.segment<3>(3));
+    if (last_frames)
+    {
+      gtsam_backend::SpeedAndBias speed_and_bias;
+      // gets the latest speed and bias estimate for last_frames (likely from the preintegration)
+      success = backend_.getSpeedAndBias(last_frames->getBundleId(), speed_and_bias);
+      imu_handler_->setAccelerometerBias(speed_and_bias.tail<3>());
+      imu_handler_->setGyroscopeBias(speed_and_bias.segment<3>(3));
+    }
 
     // shift state
     // last_updated_nframe_ = last_optimized_bid_.load();
@@ -540,8 +548,9 @@ namespace svo
     double t = backend_.getTimeSinceFirstExternalPrior();
     if (t >= time_threshold)
     {
-      VLOG(1) << "Time since first external prior is " << t << " sec and has exceeded time threshold "
-              << time_threshold << " sec and is considered initialized.";
+      static int logging_count = 0;
+      VLOG_IF(1, logging_count++ < 25) << "Time since first external prior is " << t << " sec and has exceeded time threshold "
+                                       << time_threshold << " sec and is considered initialized.";
       return true;
     }
     VLOG(10) << "Time since first external prior is: " << t << " sec. Remaining to threshold: " << time_threshold - t << std::endl;
@@ -553,8 +562,10 @@ namespace svo
     for (PointPtr &landmark : active_landmarks_)
     {
       backend_.updateLandmarkPosition(landmark);
-      VLOG(9) << "Updated landmark position for landmark with id = " << landmark->id();
+      VLOG(20) << "Updated landmark position for landmark with id = " << landmark->id();
     }
+
+    VLOG(5) << "Updated " << active_landmarks_.size() << " active landmarks using backend estimate.";
 
     return true;
   }
