@@ -116,8 +116,7 @@ namespace svo
 
     // add frame to map
 
-    map_->addKeyframe(newFrame(),
-                      bundle_adjustment_type_ == BundleAdjustmentType::kCeres);
+    map_->addKeyframe(newFrame(), bundle_adjustment_type_ != BundleAdjustmentType::kNone);
     stage_ = Stage::kTracking;
     tracking_quality_ = TrackingQuality::kGood;
     initializer_->reset();
@@ -152,7 +151,7 @@ namespace svo
 
     // STEP 3: Pose & Structure Optimization
     // redundant when using ceres backend
-    if (bundle_adjustment_type_ != BundleAdjustmentType::kCeres)
+    if (bundle_adjustment_type_ == BundleAdjustmentType::kNone)
     {
       VLOG(40) << "===== Pose Optimization =====";
       n_total_observations = optimizePose();
