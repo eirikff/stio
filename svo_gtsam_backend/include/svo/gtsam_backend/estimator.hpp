@@ -104,7 +104,7 @@ namespace svo
        * @return true on success.
        * @return false on failure.
        */
-      bool removePointsByPointIds(const std::vector<int> &pt_ids);
+      bool removePointsByLandmarkIds(const std::vector<int> &pt_ids);
 
       /**
        * @brief Get the speed and bias estimates from the backend.

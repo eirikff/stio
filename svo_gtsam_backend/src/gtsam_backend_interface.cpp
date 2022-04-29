@@ -129,9 +129,23 @@ namespace svo
         outlier_rejection_->removeOutliers(
             *frame, n_deleted_edges, n_deleted_corners, deleted_points);
       }
+
+      // remove from active landmarks
+      // TODO: INEFFICIENT O(n^2), fix!
+      for (int id : deleted_points)
+      {
+        for (auto it = active_landmarks_.begin(); it != active_landmarks_.end(); it++)
+        {
+          if ((*it)->id() == id)
+          {
+            active_landmarks_.erase(it);
+            break;
+          }
+        }
+      }
       // remove landmark variables from the factor graph based on the id
       // from outlier rejection
-      backend_.removePointsByPointIds(deleted_points);
+      backend_.removePointsByLandmarkIds(deleted_points);
       VLOG(6) << "Outlier rejection: removed " << n_deleted_edges
               << " edgelets and " << n_deleted_corners << " corners.";
     }

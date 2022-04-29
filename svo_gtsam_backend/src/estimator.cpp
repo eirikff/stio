@@ -151,10 +151,35 @@ namespace svo
       return true;
     }
 
-    bool Estimator::removePointsByPointIds(const std::vector<int> &pt_ids)
+    bool Estimator::removePointsByLandmarkIds(const std::vector<int> &pt_ids)
     {
+      const gtsam::VariableIndex &varIdx = isam_->getVariableIndex();
+      gtsam::FactorIndices factorsToRemove;
+      for (const int &id : pt_ids)
+      {
+        auto it = varIdx.find(L(id));
 
-      return false;
+        if (it == varIdx.end())
+        {
+          std::cout << "Couldn't find id " << id << std::endl;
+          continue;
+        }
+
+        for (gtsam::Key factorIdx : it->second)
+        {
+          factorsToRemove.push_back(factorIdx);
+        }
+
+        landmark_obsv_states_.erase(L(id));
+      }
+
+      if (factorsToRemove.size() > 0)
+      {
+        gtsam::ISAM2Result res = isam_->update(gtsam::NonlinearFactorGraph(), gtsam::Values(), factorsToRemove);
+        std::cout << "Removed " << res.keysWithRemovedFactors.size() << " keys" << std::endl;
+      }
+
+      return true;
     }
 
     bool Estimator::getSpeedAndBias(const BundleId &bid, SpeedAndBias &speed_and_bias) const
@@ -414,7 +439,7 @@ namespace svo
       }
       catch (const gtsam::ValuesKeyDoesNotExist &e)
       {
-        VLOG(8) << "Couldn't get estimate of landmark " << gtsam::key_formatter(gtsam::DefaultKeyFormatter) << e.key();
+        VLOG(8) << "Couldn't get estimate of landmark " << gtsam::DefaultKeyFormatter(e.key());
         return false;
       }
 
