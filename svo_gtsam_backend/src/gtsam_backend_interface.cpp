@@ -292,6 +292,20 @@ namespace svo
               << "  pos = " << prior.translation().transpose() << "\n"
               << "  rpy = " << prior.rotation().rpy().transpose();
     }
+    if (is_keyframe && is_frontend_initialized_)
+    {
+      double timestamp = frame_bundle->getMinTimestampSeconds();
+      gtsam::Pose3 prior = ext_pose_handler_.getPose(timestamp).second;
+
+      BundleId bid = frame_bundle->getBundleId();
+      backend_.addExternalPosePrior(bid, prior);
+
+      VLOG(3) << "Added external prior for bundle id " << bid << " after front-end is initialized "
+              << " at timestamp " << std::setprecision(17) << timestamp << ": \n"
+              << std::setfill(' ')
+              << "  pos = " << prior.translation().transpose() << "\n"
+              << "  rpy = " << prior.rotation().rpy().transpose();
+    }
 
     // last_added_nframe_images_ = frame_bundle->getBundleId();
     // last_added_frame_stamp_ns_ = frame_bundle->getMinTimestampNanoseconds();
