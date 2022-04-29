@@ -556,7 +556,8 @@ namespace svo
         continue;
       }
 
-      if (!backend_.addProjectionFactors(landmark))
+      int level = frame->level_vec_(i);
+      if (!backend_.addProjectionFactors(landmark, level))
       {
         LOG(WARNING) << "Failed to add projection factors.";
         continue;

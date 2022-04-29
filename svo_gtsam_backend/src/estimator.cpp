@@ -111,10 +111,10 @@ namespace svo
       return true;
     }
 
-    bool Estimator::addProjectionFactors(const PointPtr &landmark)
+    bool Estimator::addProjectionFactors(const PointPtr &landmark, int level)
     {
       //  TODO: make noise sigma value parameter/option
-      auto noise = gtsam::noiseModel::Isotropic::Sigma(2, 1); // px
+      auto noise = gtsam::noiseModel::Isotropic::Sigma(2, 1 << level); // px
 
       for (auto &obsv : landmark->obs_)
       {

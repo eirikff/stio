@@ -92,10 +92,11 @@ namespace svo
        * is the same as a projection factor between a frame and a landmark.
        *
        * @param landmark Point object of landmark to add.
+       * @param level Pyramid level of landmark.
        * @return true on success.
        * @return false on failure.
        */
-      bool addProjectionFactors(const PointPtr &landmark);
+      bool addProjectionFactors(const PointPtr &landmark, int level);
 
       /**
        * @brief Removes landmark observation from factor graph.
