@@ -88,7 +88,7 @@ namespace svo
       }
       catch (const gtsam::ValuesKeyDoesNotExist &e)
       {
-        VLOG(8) << "Failed to access landmark with key " << gtsam::key_formatter(gtsam::DefaultKeyFormatter) << e.key() << " in publishBackendLandmarks.";
+        VLOG(8) << "Failed to access landmark with key " << gtsam::DefaultKeyFormatter(e.key()) << " in publishBackendLandmarks.";
       }
     }
 
