@@ -98,7 +98,8 @@ namespace svo
 
       options.use_zero_motion_detection = false;
       options.use_outlier_rejection = false;
-      options.outlier_rejection_px_threshold = 2.0;
+      options.outlier_rejection_px_threshold = 3.0;
+      options.add_external_prior_to_every_keyframe = false;
 
       gtsam_backend_interface_ = std::make_shared<GtsamBackendInterface>(
           pnh_, options, backend_options, motion_detection_options, ncam_);

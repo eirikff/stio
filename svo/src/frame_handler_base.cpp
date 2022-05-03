@@ -353,7 +353,7 @@ namespace svo
     if (bundle_adjustment_->getType() == BundleAdjustmentType::kGtsam)
     {
       // only track if external prior has run for desired amount
-      if (bundle_adjustment_->isInitializedWithExternalPrior(2.5))
+      if (bundle_adjustment_->isInitializedWithExternalPrior(5))
       {
         update_res_ = processFrameBundle();
       }

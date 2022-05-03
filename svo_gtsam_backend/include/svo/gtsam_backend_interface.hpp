@@ -56,6 +56,9 @@ namespace svo
     /// Minimum number of observations a landmark must have to be added to the
     /// backend.
     size_t min_obsv_count = 2;
+
+    // Adds external prior to each keyframe after then frontend has initialized.
+    bool add_external_prior_to_every_keyframe = false;
   };
 
   struct GtsamBackendOptions

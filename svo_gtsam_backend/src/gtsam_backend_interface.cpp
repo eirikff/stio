@@ -112,9 +112,9 @@ namespace svo
       for (const FramePtr &last_frame : *last_frames)
       {
         if (!last_frame->isKeyframe())
-          // ceres backend only updates if last_frame is *not* keyframe, why?
-          // TODO: should gtsam backend also only update when not keyframe?
-          // need better understanding of what last_frames actually are.
+          // only update if not keyframe to avoid updating the same frame twice.
+          // if it is a keyframe, it would be updated in the previous loop over
+          // active_keyframes_ as it stores pointers to frames.
           updateFrameStateWithBackend(last_frame, true);
       }
     }
@@ -245,7 +245,7 @@ namespace svo
               << "  pos = " << prior.translation().transpose() << "\n"
               << "  rpy = " << prior.rotation().rpy().transpose();
     }
-    if (is_keyframe && is_frontend_initialized_)
+    if (options_.add_external_prior_to_every_keyframe && is_keyframe && is_frontend_initialized_)
     {
       double timestamp = frame_bundle->getMinTimestampSeconds();
       gtsam::Pose3 prior = ext_pose_handler_.getPose(timestamp).second;
