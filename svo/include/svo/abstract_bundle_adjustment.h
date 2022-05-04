@@ -108,6 +108,13 @@ namespace svo
 
     virtual inline void setUseExternalPrior(bool b) { use_external_prior_ = b; }
 
+    // gets all poses, landmarks and constraints from the backend. must be defined
+    // in derived class
+    virtual void exportEstimatorData()
+    {
+      LOG(ERROR) << "Must be defined in derived class.";
+    }
+
   protected:
     BundleAdjustmentType type_ = BundleAdjustmentType::kNone;
 

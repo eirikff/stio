@@ -723,6 +723,19 @@ namespace svo
         last_state_.setAccBias(speed_and_bias.tail<3>());
         last_state_.setGyroBias(speed_and_bias.segment<3>(3));
 
+        if (last_optimized_nframe_ == 98) // bundle id = 98 is after 5 seconds
+        {
+          gtsam::NonlinearFactorGraph graph;
+          gtsam::Values initial;
+          backend_.exportProblemData(graph, initial);
+
+          gtsam::LevenbergMarquardtParams lm_params;
+          lm_params.setVerbosityLM("summary");
+          gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial, lm_params);
+          gtsam::Values result = optimizer.optimize();
+          // TODO: PRINT GTSAM RESULTS NEATLY HERE
+        }
+
         // publish current estimation
         if (publisher_)
         {

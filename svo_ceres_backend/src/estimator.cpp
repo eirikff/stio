@@ -55,6 +55,11 @@
 #include "svo/ceres_backend/speed_and_bias_error.hpp"
 #include "svo/ceres_backend/homogeneous_point_error.hpp"
 
+using gtsam::symbol_shorthand::B;
+using gtsam::symbol_shorthand::L;
+using gtsam::symbol_shorthand::V;
+using gtsam::symbol_shorthand::X;
+
 namespace svo
 {
   std::vector<std::string> MarginalizationTiming::names_{
@@ -1842,6 +1847,105 @@ namespace svo
         }
       }
       std::cout << "Will recompute " << cnt << " IMU terms." << std::endl;
+    }
+  }
+
+  void Estimator::exportProblemData(gtsam::NonlinearFactorGraph &graph, gtsam::Values &initial)
+  {
+    std::cout << "states_.ids:\n";
+    gtsam::Pose3 T_WS_gtsam_prev;
+    BundleId bid_prev;
+    int between_factors_added = 0;
+    int bias_factors_added = 0;
+    for (auto i : states_.ids)
+    {
+      BackendId id(i);
+      BackendId sab_id = changeIdType(id, IdType::ImuStates);
+      auto T_WS = getPoseEstimate(id).first;
+      auto sab = getSpeedAndBiasEstimate(sab_id);
+      std::cout << "CERES Pose bid: " << id.bundleId() << " (id: " << id << "):\n"
+                << T_WS << "\n";
+      if (sab.second)
+        std::cout << "CERES Speed and bias bid: " << sab_id.bundleId() << " (sab_id: " << sab_id << "):\n"
+                  << sab.first.transpose() << "\n";
+      std::cout << "----------------------------------------" << std::endl;
+
+      BundleId bid = id.bundleId();
+      gtsam::Pose3 T_WS_gtsam(T_WS.getTransformationMatrix());
+      initial.insert(X(bid), T_WS_gtsam);
+
+      if (sab.second)
+      {
+        gtsam::Vector3 speed(sab.first.head<3>());
+        gtsam::imuBias::ConstantBias biases(sab.first.tail<3>(), sab.first.segment<3>(3));
+
+        initial.insert(V(bid), speed);
+        initial.insert(B(bid), biases);
+      }
+
+      if (between_factors_added == 0)
+      {
+        auto noise_model = gtsam::noiseModel::Isotropic::Sigmas(
+            (gtsam::Vector(6) << 1e-2, 1e-2, 1e-2, 1e-3, 1e-3, 1e-3).finished());
+        graph.addPrior(X(bid), T_WS_gtsam, noise_model);
+      }
+      else
+      {
+        auto noise_model = gtsam::noiseModel::Isotropic::Sigmas(
+            (gtsam::Vector(6) << 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1).finished());
+        gtsam::Pose3 delta = T_WS_gtsam_prev.between(T_WS_gtsam);
+        graph.add(gtsam::BetweenFactor<gtsam::Pose3>(X(bid_prev), X(bid), delta, noise_model));
+      }
+
+      between_factors_added++;
+      T_WS_gtsam_prev = T_WS_gtsam;
+      bid_prev = bid;
+    }
+    std::cout << std::endl;
+
+    graph.print("ONLY POSES: ");
+    initial.print("ONLY POSES: ");
+
+    auto cal = camera_rig_->getCamera(0).getIntrinsicParameters();
+    auto d = camera_rig_->getCamera(0).getDistortionParameters();
+    double fx = cal(0), fy = cal(1), cx = cal(2), cy = cal(3);
+    double k1 = d(0), k2 = d(1), p1 = d(2), p2 = d(3);
+    gtsam::Cal3DS2::shared_ptr K;
+    K.reset(new gtsam::Cal3DS2(fx, fy, 0, cx, cy, k1, k2, p1, p2));
+
+    auto T_C_B_vk = camera_rig_->get_T_C_B(0);
+    auto T_C_B_gtsam = gtsam::Pose3(gtsam::Rot3(T_C_B_vk.getEigenQuaternion()), T_C_B_vk.getPosition());
+    auto T_body_sensor = T_C_B_gtsam.inverse();
+
+    MapPointVector landmarks;
+    getLandmarks(landmarks);
+    for (MapPoint l : landmarks)
+    {
+      std::cout << "CERES Landmark id: " << std::setw(3) << l.point->id_
+                << "\tx: " << l.point->pos_.x()
+                << "\ty: " << l.point->pos_.y()
+                << "\tz: " << l.point->pos_.z();
+      std::cout << "\tObservation bids: ";
+      for (KeypointIdentifier o : l.point->obs_)
+      {
+        std::cout << o.frame_id << " ";
+
+        if (o.frame_id == 0)
+          continue;
+
+        if (auto f = o.frame.lock())
+        {
+          gtsam::Point2 meas = f->px_vec_.col(o.keypoint_index_);
+          int level = f->level_vec_[o.keypoint_index_];
+          auto noise_model = gtsam::noiseModel::Isotropic::Sigma(2, 1 << level);
+
+          graph.emplace_shared<gtsam::GenericProjectionFactor<gtsam::Pose3, gtsam::Point3, gtsam::Cal3DS2>>(
+              meas, noise_model, X(o.frame_id), L(l.point->id()), K, false, true, T_body_sensor);
+        }
+      }
+      std::cout << std::endl;
+
+      initial.insert(L(l.point->id()), l.point->pos());
     }
   }
 

@@ -61,6 +61,20 @@
 #include "svo/ceres_backend/map.hpp"
 #include "svo/ceres_backend/estimator_types.hpp"
 
+// DEBUGGING
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/nonlinear/Values.h>
+#include <gtsam/geometry/Pose3.h>
+#include <gtsam/geometry/Point3.h>
+#include <gtsam/navigation/ImuFactor.h>
+#include <gtsam/navigation/CombinedImuFactor.h>
+#include <gtsam/slam/ProjectionFactor.h>
+#include <gtsam/geometry/Cal3DS2.h>
+#include <gtsam/inference/Symbol.h>
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
+#include <gtsam/nonlinear/LevenbergMarquardtParams.h>
+#include <gtsam/slam/BetweenFactor.h>
+
 namespace svo
 {
 
@@ -704,6 +718,10 @@ namespace svo
 
       //
       size_t min_num_3d_points_for_fixation_ = 10u;
+
+      // exports all poses and landmarks and other relevant data for the
+      // backend problem
+      void exportProblemData(gtsam::NonlinearFactorGraph &graph, gtsam::Values &initial);
 
     private:
       /**
