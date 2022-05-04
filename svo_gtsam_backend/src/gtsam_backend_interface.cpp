@@ -321,7 +321,15 @@ namespace svo
     p->rate = calib.imu_rate;
     p->delay_imu_cam = calib.delay_imu_cam;
 
-    // TODO: add body_P_sensor transform
+    // TODO: this needs to be a parameter or estimated from data
+    // FOR EUROC VICON ROOM (T_imu_vicon = T_sensor_body)
+    gtsam::Matrix44 mat;
+    mat << 0.33638023, -0.01748697, 0.94156389, 0.06901,
+        -0.02078177, -0.99972194, -0.01114267, -0.02781,
+        0.94149693, -0.01581919, -0.3366501, -0.12395,
+        0.0, 0.0, 0.0, 1.0;
+    gtsam::Pose3 T_imu_vicon(mat);
+    p->int_param->body_P_sensor = T_imu_vicon.inverse();
 
     backend_.addImuParams(p);
   }

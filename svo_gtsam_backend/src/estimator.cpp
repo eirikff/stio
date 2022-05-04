@@ -29,15 +29,6 @@ namespace svo
     {
       imu_params_ = params;
 
-      // TODO: this needs to be a parameter or estimated from data
-      // FOR EUROC VICON ROOM (T_imu_vicon = T_sensor_body)
-      gtsam::Rot3 rot(0.33638, -0.01749, 0.94156,
-                      -0.02078, -0.99972, -0.01114,
-                      0.94150, -0.01582, -0.33665);
-      gtsam::Point3 trans(0.06901, -0.02781, -0.12395);
-      gtsam::Pose3 T_imu_vicon(rot, trans);
-      params->int_param->body_P_sensor = T_imu_vicon.inverse();
-
       preint_ = std::make_shared<gtsam::PreintegratedCombinedMeasurements>(params->int_param);
     }
 
