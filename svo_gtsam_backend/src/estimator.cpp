@@ -259,9 +259,15 @@ namespace svo
       if (last_preint_factor_bid_ == -1)
         return false;
 
-      const gtsam::ISAM2Result res = isam_->update(graph_, initial_values_);
+      gtsam::ISAM2Result res = isam_->update(graph_, initial_values_);
       // isam_->update();
       res.print("GTSAM BACKEND ISAM RESULTS: ");
+      std::cout << "Error before: " << res.errorBefore << "\n";
+      std::cout << "Error after: " << res.errorAfter << "\n";
+      std::cout << std::endl;
+
+      res = isam_->update(); // might get better results by updating one extra time
+      res.print("GTSAM BACKEND SECOND ISAM RESULTS: ");
       std::cout << "Error before: " << res.errorBefore << "\n";
       std::cout << "Error after: " << res.errorAfter << "\n";
       std::cout << std::endl;
