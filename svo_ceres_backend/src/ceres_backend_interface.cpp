@@ -103,6 +103,7 @@ namespace svo
       // Obtain motion prior ---------------------------------------------------
       updateBundleStateWithBackend(new_frames, true);
       have_motion_prior = true;
+      std::cout << "Updated frame with bid " << new_frames->getBundleId() << " using backend" << std::endl;
     }
     else
     {
@@ -120,8 +121,10 @@ namespace svo
     }
 
     // Update Frames and Map ---------------------------------------------------
+    std::cout << "last_updated_nframe_ = " << last_updated_nframe_ << "\nlast_optimized_nframe_ = " << last_optimized_nframe_.load() << std::endl;
     if (last_updated_nframe_ == last_optimized_nframe_.load())
     {
+      std::cout << "last_updated_nframe_ == last_optimized_nframe_.load() is true, return early" << std::endl;
       VLOG(3) << "VIN: No map update available.";
       return;
     }
@@ -132,6 +135,7 @@ namespace svo
       // Statistics
       int n_frames_updated = 0;
 
+      std::cout << "updating active keyframes using backend" << std::endl;
       VLOG(3) << "Updating states with latest results from ceres optimizer.";
       //! @todo this is not very efficient for multiple cameras,
       //! because we update each frame separately
@@ -142,16 +146,20 @@ namespace svo
         DEBUG_CHECK(keyframe) << "Found nullptr keyframe";
         updateFrameStateWithBackend(keyframe, false);
         n_frames_updated++;
+        std::cout << "updated keyframe with bid = " << keyframe->bundle_id_ << std::endl;
       }
       VLOG(3) << "Updated " << n_frames_updated << " frames in map.";
+      std::cout << "Updated " << n_frames_updated << " active keyframes" << std::endl;
 
       // Update the 3d points in map of the updated keyframes ----------------
       // Statistics
       backend_.updateAllActivePoints();
+      std::cout << "updated all active points/landmarks" << std::endl;
     }
 
     // Update last frame bundle ------------------------------------------------
     {
+      std::cout << "updating last frames" << std::endl;
       // Last frames might not be keyframes (are not yet updated => update pose)
       for (FramePtr &last_frame : *last_frames)
       {
@@ -166,6 +174,7 @@ namespace svo
       {
         if (last_frames)
         {
+          std::cout << "doing outlier rejection" << std::endl;
           size_t n_deleted_edges = 0;
           size_t n_deleted_corners = 0;
           std::vector<int> deleted_points;
@@ -179,6 +188,9 @@ namespace svo
           backend_.removePointsByPointIds(deleted_points);
           VLOG(6) << "Outlier rejection: removed " << n_deleted_edges
                   << " edgelets and " << n_deleted_corners << " corners.";
+
+          std::cout << "Outlier rejection: removed " << n_deleted_edges
+                    << " edgelets and " << n_deleted_corners << " corners." << std::endl;
         }
       }
 
@@ -192,11 +204,14 @@ namespace svo
       imu_handler_->setAccelerometerBias(speed_and_bias.tail<3>());
       imu_handler_->setGyroscopeBias(speed_and_bias.segment<3>(3));
 
+      std::cout << "updated speed and bias from backend and set imu handler" << std::endl;
+
       publisher_->addFrame(last_added_nframe_imu_);
     }
 
     // shift state
     last_updated_nframe_ = last_optimized_nframe_.load();
+    std::cout << "new last_updated_nframe_ is " << last_updated_nframe_ << std::endl;
   }
 
   // Add feature correspondences and landmarks to backend
@@ -210,6 +225,7 @@ namespace svo
     // check for case when IMU measurements could not be added.
     if (last_added_nframe_imu_ == last_added_nframe_images_)
     {
+      std::cout << "imu measurements have not been added" << std::endl;
       return;
     }
 
@@ -273,17 +289,20 @@ namespace svo
     }
 
     // Adding new landmarks to backend -----------------------------------------
+    std::cout << "adding (new) landmarks to backend" << std::endl;
     size_t num_new_observations = 0;
     for (FramePtr &frame : *frame_bundle)
     {
       if (frame->isKeyframe())
       {
+        std::cout << " frame is keyframe, adding to active keyframes and adding landmarks and observations to backend" << std::endl;
         backend_.setKeyframe(createNFrameId(frame->bundleId()), true);
         active_keyframes_.push_back(frame);
         addLandmarksAndObservationsToBackend(frame);
       }
       else
       {
+        std::cout << " frame is NOT keyframe, there are " << frame->numFeatures() << " potential features to add to backend as observations" << std::endl;
         // add observations for landmarks that are still visible
         for (size_t kp_idx = 0; kp_idx < frame->numFeatures(); ++kp_idx)
         {
@@ -298,6 +317,7 @@ namespace svo
         }
       }
     }
+    std::cout << " added " << num_new_observations << " observations to backend when not keyframe" << std::endl;
     VLOG(10) << "Backend: Added " << num_new_observations
              << " continued observation in non-KF to backend.";
 
@@ -349,6 +369,7 @@ namespace svo
     std::vector<std::pair<size_t, size_t>> kp_idx_to_n_obs_map_fixed_lm;
 
     // iterate through all features
+    std::cout << " adding " << frame->numFeatures() << " features to backend" << std::endl;
     for (size_t kp_idx = 0; kp_idx < frame->numFeatures(); ++kp_idx)
     {
       const PointPtr &point = frame->landmark_vec_[kp_idx];
@@ -468,6 +489,20 @@ namespace svo
             << n_skipped_points_parallax;
     VLOG(6) << "Backend: Adding points. Skipped because not corner: "
             << n_skipped_not_corner;
+
+    std::cout << "Backend has: " << backend_.numFixedLandmarks()
+              << " fixed landmarks out of " << backend_.numLandmarks() << std::endl
+              << std::endl;
+    std::cout << "Backend: Added " << n_new_landmarks << " new landmarks" << std::endl;
+    std::cout << "Backend: Added " << n_new_observations << " new observations" << std::endl;
+    std::cout << "Backend: Observations already in backend: "
+              << n_features_already_in_backend << std::endl;
+    std::cout << "Backend: Adding points. Skipped because less than "
+              << options_.min_num_obs << " observations: " << n_skipped_few_obs << std::endl;
+    std::cout << "Backend: Adding points. Skipped because small parallax: "
+              << n_skipped_points_parallax << std::endl;
+    std::cout << "Backend: Adding points. Skipped because not corner: "
+              << n_skipped_not_corner << std::endl;
   }
 
   // Introduce a state for the frame_bundle in backend. Add IMU terms.
@@ -495,6 +530,7 @@ namespace svo
                  << frame_bundle->getMinTimestampNanoseconds();
       return false;
     }
+    std::cout << "Got " << imu_measurements.size() << " imu measurements" << std::endl;
 
     // introduce a state for the frame in the backend --------------------------
     if (!backend_.addStates(frame_bundle, imu_measurements,
@@ -518,6 +554,8 @@ namespace svo
     DEBUG_CHECK(success) << "Could not get state for frame bundle "
                          << f->bundleId() << " from backend";
     f->set_T_w_imu(T_WS);
+    std::cout << "Frame " << f->bundleId() << " transform update backend: T_W_C\n"
+              << f->T_world_cam() << std::endl;
     if (get_speed_bias)
     {
       SpeedAndBias speed_bias;
@@ -609,6 +647,8 @@ namespace svo
         {
           return;
         }
+
+        std::cout << "Optimization loop notified!" << std::endl;
 
         vk::Timer timer;
         {

@@ -193,6 +193,8 @@ namespace svo
     VLOG(40) << "New Frame Bundle received: " << frame_bundle->getBundleId();
     CHECK_EQ(frame_bundle->size(), cams_->numCameras());
 
+    std::cout << "addFrameBundle: beginning of bid = " << frame_bundle->getBundleId() << std::endl;
+
     // ---------------------------------------------------------------------------
     // Prepare processing.
 
@@ -206,6 +208,8 @@ namespace svo
       have_rotation_prior_ = have_rotation_prior;
       setInitialPose(frame_bundle);
       stage_ = Stage::kInitializing;
+      std::cout << "Set start, initial pose:\n"
+                << frame_bundle->get_T_W_B() << std::endl;
     }
 
     if (stage_ == Stage::kPaused)
@@ -269,9 +273,11 @@ namespace svo
                                                  timestamp_backend_latest_);
       }
 
+      std::cout << "Before loadMapFromBundleAdjustment call." << std::endl;
       bundle_adjustment_->loadMapFromBundleAdjustment(new_frames_,
                                                       last_frames_, map_,
                                                       have_motion_prior_);
+      std::cout << "After loadMapFromBundleAdjustment call." << std::endl;
 
       if (bundle_adjustment_->getNumFrames() > 0 && have_motion_prior_)
       {
@@ -279,6 +285,7 @@ namespace svo
             &speed_bias_backend_latest_, &T_WS_backend_latest_,
             &timestamp_backend_latest_);
         backend_reinit_ = false;
+        std::cout << "god latest speed, bias, and pose " << std::endl;
       }
 
       // compute the distance between the last two keyframes after ba update
@@ -288,10 +295,12 @@ namespace svo
         opt_dist_first_two_kfs = distanceFirstTwoKeyframes(*map_);
         const double scale_change =
             opt_dist_first_two_kfs / svo_dist_first_two_kfs - 1.0;
+        std::cout << "Scale change: " << scale_change << std::endl;
         if (std::abs(scale_change) < options_.backend_scale_stable_thresh)
         {
           map_->getKeyFrameAt(0)->is_stable_ = true;
           backend_scale_stable = true;
+          std::cout << "Scale stable" << std::endl;
         }
         else
         {
@@ -304,6 +313,7 @@ namespace svo
     // handle motion prior
     if (have_motion_prior_)
     {
+      std::cout << "Have motion prior" << std::endl;
       have_rotation_prior_ = true;
       R_imu_world_ = new_frames_->get_T_W_B().inverse().getRotation();
       if (last_frames_)
@@ -329,11 +339,13 @@ namespace svo
           depth_filter_->updateSeeds(overlap_kfs_.at(0),
                                      last_frames_->frames_[0]);
           VLOG(2) << "Adjusting SVO scale to backend";
+          std::cout << "Set scene depth" << std::endl;
         }
       }
     }
     else
     {
+      std::cout << "No motion prior" << std::endl;
       // Predict pose of new frame using motion prior.
       // TODO(cfo): remove same from processFrame in mono.
       if (last_frames_)
@@ -353,7 +365,7 @@ namespace svo
     if (bundle_adjustment_->getType() == BundleAdjustmentType::kGtsam)
     {
       // only track if external prior has run for desired amount
-      if (bundle_adjustment_->isInitializedWithExternalPrior(5))
+      if (bundle_adjustment_->isInitializedWithExternalPrior(0.2))
       {
         update_res_ = processFrameBundle();
       }
@@ -365,7 +377,9 @@ namespace svo
     }
     else
     {
+      std::cout << "Before processFrameBundle call for Ceres" << std::endl;
       update_res_ = processFrameBundle();
+      std::cout << "After processFrameBundle call for Ceres" << std::endl;
     }
 
     // We start the backend first, since it is the most time crirical
@@ -386,7 +400,9 @@ namespace svo
       }
 #endif
       VLOG(40) << "Call bundle adjustment.";
+      std::cout << "Before bundleAdjustment call" << std::endl;
       bundle_adjustment_->bundleAdjustment(new_frames_);
+      std::cout << "After bundleAdjustment call" << std::endl;
     }
 
     // Information exchange between loop closing and global map
@@ -414,6 +430,7 @@ namespace svo
     // Add keyframe to loop closing and the global map
     if (update_res_ == UpdateResult::kKeyframe)
     {
+      std::cout << "Newest frame was selected as keyframe" << std::endl;
       // Set flag in bundle. Before we only set each frame individually.
       new_frames_->setKeyframe();
       last_kf_time_sec_ = new_frames_->at(0)->getTimestampSec();
@@ -464,6 +481,7 @@ namespace svo
 
     if (last_frames_)
     {
+      std::cout << "Set translation motion prior for next frame" << std::endl;
       // Set translation motion prior for next frame.
       t_lastimu_newimu_ = new_frames_->at(0)->T_imu_world().getRotation().rotate(
           new_frames_->at(0)->imuPos() - last_frames_->at(0)->imuPos());
@@ -495,6 +513,7 @@ namespace svo
     // Try relocalizing if tracking failed.
     if (update_res_ == UpdateResult::kFailure)
     {
+      std::cout << "Tracking failed, relocalizing..." << std::endl;
       VLOG(2) << "Tracking failed: RELOCALIZE.";
       CHECK(stage_ == Stage::kTracking || stage_ == Stage::kInitializing || stage_ == Stage::kRelocalization);
 
@@ -553,6 +572,11 @@ namespace svo
     // Call callbacks.
     VLOG(40) << "Triggering addFrameBundle() callbacks...";
     triggerCallbacks(last_frames_);
+
+    std::cout << "End of addFrameBundle" << std::endl;
+    std::cout << "---------------------------------------------------\n"
+              << std::endl;
+
     return true;
   }
 
@@ -576,6 +600,7 @@ namespace svo
   {
     if (have_rotation_prior_)
     {
+      std::cout << "setInitialPose: Using rot prior" << std::endl;
       VLOG(40) << "Set initial pose: With rotation prior";
       for (size_t i = 0; i < frame_bundle->size(); ++i)
       {
@@ -584,6 +609,7 @@ namespace svo
     }
     else if (frame_bundle->imu_measurements_.cols() > 0)
     {
+      std::cout << "setInitialPose: Using imu measurements" << std::endl;
       VLOG(40) << "Set initial pose: Use inertial measurements in frame to get gravity.";
       const Vector3d g = frame_bundle->imu_measurements_.topRows<3>().rowwise().sum();
       const Vector3d z = g.normalized(); // imu measures positive-z when static
@@ -606,6 +632,7 @@ namespace svo
     }
     else
     {
+      std::cout << "setInitialPose: Using T_world_imuinit" << std::endl;
       VLOG(40) << "Set initial pose: set such that T_imu_world is identity.";
       for (size_t i = 0; i < frame_bundle->size(); ++i)
       {

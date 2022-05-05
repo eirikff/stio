@@ -143,7 +143,7 @@ use_outlier_rejection: true
 outlier_rejection_px_threshold: 2.0
 
 # Zero Motion Detection
-backend_use_zero_motion_detection: true
+backend_use_zero_motion_detection: false
 backend_zero_motion_check_n_frames: 5
 zero_motion_px_diff_threshold: 0.2 # decrease with lower resolution
 zero_motion_ratio_moving_pixels_threshold: 0.1 

@@ -15,6 +15,8 @@ namespace svo
     // calculate threshold
     const double outlier_threshold = reproj_err_threshold_ / frame.getErrorMultiplier(); // focal length;
 
+    double total_err = 0;
+
     for (size_t i = 0; i < frame.num_features_; ++i)
     {
 
@@ -34,6 +36,7 @@ namespace svo
       // calculate residual according to different feature type and residual
       double unwhitened_error;
 
+      std::cout << " id=" << frame.landmark_vec_[i]->id();
       if (isEdgelet(frame.type_vec_[i]))
       {
         calculateEdgeletResidualUnitPlane(
@@ -48,6 +51,8 @@ namespace svo
                                           unwhitened_error);
       }
       unwhitened_error *= 1.0 / (1 << frame.level_vec_(static_cast<int>(i)));
+      std::cout << " err: " << unwhitened_error << std::endl;
+      total_err += unwhitened_error;
 
       if (std::fabs(unwhitened_error) > outlier_threshold)
       {
@@ -64,6 +69,7 @@ namespace svo
         continue;
       }
     }
+    std::cout << " outlier rejection: average unwhitened error: " << total_err / frame.num_features_ << std::endl;
   }
 
   void OutlierRejection::calculateEdgeletResidualUnitPlane(
@@ -91,6 +97,8 @@ namespace svo
     // Prediction error.
     Eigen::Vector2d e = vk::project2(f) - vk::project2(xyz_in_cam);
     unwhitened_error = e.norm();
+
+    std::cout << " corner residual unit plane: f = " << f.transpose() << " xyz = " << xyz_in_cam.transpose() << " e_f = " << vk::project2(f).transpose() << " e_xyz = " << vk::project2(xyz_in_cam).transpose() << " ";
   }
 
 } // namespace svo

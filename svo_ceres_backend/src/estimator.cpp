@@ -146,6 +146,8 @@ namespace svo
                               const ImuMeasurements &imu_measurements,
                               const double &timestamp)
     {
+      std::cout << "Before addStates call" << std::endl;
+
       BackendId nframe_id = createNFrameId(frame_bundle->getBundleId());
       VLOG(20) << "Adding state to estimator. Bundle ID: "
                << frame_bundle->getBundleId()
@@ -159,8 +161,10 @@ namespace svo
       // initialization or propagate the IMU
       if (states_.ids.empty())
       {
+        std::cout << "states_ is empty" << std::endl;
         if (is_reinit_)
         {
+          std::cout << "is reinit is true" << std::endl;
           last_timestamp = reinit_timestamp_start_;
           speed_and_bias = reinit_speed_bias_;
           T_WS = reinit_T_WS_;
@@ -185,10 +189,13 @@ namespace svo
           }
           speed_and_bias.setZero();
           speed_and_bias.segment<3>(6) = imu_parameters_.at(0).a0;
+          std::cout << "Initialized pose from imu: \n"
+                    << T_WS << std::endl;
         }
       }
       else
       {
+        std::cout << "states_ have " << states_.ids.size() << " elements" << std::endl;
         last_timestamp = states_.timestamps.back();
         // get the previous states
         BackendId T_WS_id = states_.ids.back();
@@ -202,6 +209,7 @@ namespace svo
                 map_ptr_->parameterBlockPtr(
                     speed_and_bias_id.asInteger()))
                 ->estimate();
+        auto T_WS_old = T_WS;
         //! @todo last_timestamp redundant because we already select imu
         //!       measurements for specific timespan
         int num_used_imu_measurements =
@@ -209,6 +217,13 @@ namespace svo
                 imu_measurements, imu_parameters_.at(0), T_WS, speed_and_bias,
                 last_timestamp, timestamp, nullptr, nullptr);
         T_WS.getRotation().normalize();
+        auto delta = (T_WS_old.inverse() * T_WS);
+        std::cout << "T_WS before imu propagation: \n"
+                  << T_WS_old << std::endl;
+        std::cout << "T_WS after imu propagation: using " << num_used_imu_measurements << " meas\n"
+                  << T_WS << std::endl;
+        std::cout << "T_WS delta is: [w, x, y, z | x, y, z] \n"
+                  << delta.asVector().transpose() << std::endl;
         //! @todo could check this sooner if we select IMU measurements as we do
         //    DEBUG_CHECK(num_used_imu_measurements > 1) << "propagation failed";
         if (num_used_imu_measurements < 1)
@@ -251,6 +266,7 @@ namespace svo
       // add initial prior or IMU errors
       if (states_.ids.size() == 1)
       {
+        std::cout << "Adding initial prior" << std::endl;
         // let's add a prior
         Eigen::Matrix<double, 6, 6> information = Eigen::Matrix<double, 6, 6>::Zero();
         information(5, 5) = 1.0e8;
@@ -297,6 +313,8 @@ namespace svo
               map_ptr_->parameterBlockPtr(nframe_id.asInteger()),
               map_ptr_->parameterBlockPtr(
                   changeIdType(nframe_id, IdType::ImuStates).asInteger()));
+
+          std::cout << "Adding imu error" << std::endl;
         }
       }
 
@@ -381,6 +399,7 @@ namespace svo
         }
       }
 
+      std::cout << "After addStates call" << std::endl;
       return true;
     }
 
@@ -1292,16 +1311,19 @@ namespace svo
 
   void Estimator::updateAllActivePoints() const
   {
+    int count = 0;
     for (auto &id_and_map_point : landmarks_map_)
     {
       if (isLandmarkFixed(id_and_map_point.first.asInteger()))
       {
         continue;
       }
+      count++;
       // update coordinates
       id_and_map_point.second.point->pos_ =
           id_and_map_point.second.hom_coordinates.head<3>();
     }
+    std::cout << "updated " << count << " active points/landmarks." << std::endl;
   }
 
   // Checks whether the landmark is initialized.
@@ -1600,6 +1622,7 @@ namespace svo
 
   bool Estimator::removePointsByPointIds(std::vector<int> &track_ids)
   {
+    std::cout << "  removing points with id: ";
     for (int &id : track_ids)
     {
       BackendId landmark_id = createLandmarkId(id);
@@ -1614,9 +1637,11 @@ namespace svo
       }
       else
       {
+        std::cout << id << ", ";
         removeLandmarkByBackendId(landmark_id, false);
       }
     }
+    std::cout << std::endl;
     return true;
   }
 
