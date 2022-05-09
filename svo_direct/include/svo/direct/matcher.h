@@ -75,6 +75,19 @@ namespace svo
             kFailTooFar
         };
 
+        const std::map<MatchResult, const char *> match_result_strings{
+            {MatchResult::kSuccess, "kSuccess"},
+            {MatchResult::kFailScore, "kFailScore"},
+            {MatchResult::kFailTriangulation, "kFailTriangulation"},
+            {MatchResult::kFailVisibility, "kFailVisibility"},
+            {MatchResult::kFailWarp, "kFailWarp"},
+            {MatchResult::kFailAlignment, "kFailAlignment"},
+            {MatchResult::kFailRange, "kFailRange"},
+            {MatchResult::kFailAngle, "kFailAngle"},
+            {MatchResult::kFailCloseView, "kFailCloseView"},
+            {MatchResult::kFailLock, "kFailLock"},
+            {MatchResult::kFailTooFar, "kFailTooFar"}};
+
 #ifdef STIO_USE_16BIT_IMAGE
         uint16_t patch_[kPatchSize * kPatchSize];
         uint16_t patch_with_border_[(kPatchSize + 2) * (kPatchSize + 2)];

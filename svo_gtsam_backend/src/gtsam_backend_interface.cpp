@@ -199,8 +199,6 @@ namespace svo
         // also adds observations (reprojection factors) for the landmarks
         // seen in this frame
         addLandmarksAndObservationsToBackend(frame);
-        // backend_.addLandmarks(frame);
-        // backend_.addObservations(frame);
       }
       else
       {
@@ -265,6 +263,8 @@ namespace svo
 
     if (success)
       do_optimize_ = true;
+
+    do_optimize_ = true; // optimize after every frame
 
     wait_condition_.notify_all();
   }

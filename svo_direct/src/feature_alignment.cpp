@@ -21,6 +21,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <svo/direct/patch_utils.h>
 
+#include <iostream>
+using namespace std;
+
 namespace svo
 {
   namespace feature_alignment
@@ -494,7 +497,7 @@ namespace svo
         uint8_t *it_ref = ref_patch;
         float *it_ref_dx = ref_patch_dx;
         float *it_ref_dy = ref_patch_dy;
-        // float new_chi2 = 0.0;
+        float new_chi2 = 0.0;
         Eigen::Vector4f Jres;
         Jres.setZero();
         for (int y = 0; y < patch_size_; ++y)
@@ -518,7 +521,7 @@ namespace svo
             {
               Jres[3] -= (-1) * res * (*it_ref);
             }
-            // new_chi2 += res*res;
+            new_chi2 += res * res;
           }
         }
         // If not use affine compensation, force update to be zero.
@@ -673,7 +676,7 @@ namespace svo
         uint16_t *it_ref = ref_patch;
         float *it_ref_dx = ref_patch_dx;
         float *it_ref_dy = ref_patch_dy;
-        // float new_chi2 = 0.0;
+        float new_chi2 = 0.0;
         Eigen::Vector4f Jres;
         Jres.setZero();
         for (int y = 0; y < patch_size_; ++y)
@@ -697,7 +700,7 @@ namespace svo
             {
               Jres[3] -= (-1) * res * (*it_ref);
             }
-            // new_chi2 += res*res;
+            new_chi2 += res * res;
           }
         }
         // If not use affine compensation, force update to be zero.

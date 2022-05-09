@@ -4,8 +4,8 @@
 
   <!-- SVO node -->
   <node pkg="svo_ros" type="svo_node" name="svo" clear_params="true" output="screen" args="--v=0" >
-    <env name="GLOG_logtostderr" value="0" />
-    <env name="GLOG_vmodule" value="ceres*=10,frame_handler*=10" />
+    <env name="GLOG_logtostderr" value="1" />
+    <env name="GLOG_vmodule" value="ceres*=10,frame_handler*=100,estimator*=50,reprojector=100,depth_filter=10" />
 
     <!-- Camera topic to subscribe to -->
     <param name="cam0_topic" value="/cam0/image_raw" type="str" />

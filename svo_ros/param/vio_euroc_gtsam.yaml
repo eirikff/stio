@@ -24,6 +24,8 @@ max_map_fts: 300
 max_n_kfs: 10
 quality_min_fts: 40
 
+#quality_max_drop_fts: 80
+
 # Map scale when initialized (not used for stereo)
 # Increase if the initial scene depth is larger
 map_scale: 1.5
@@ -63,7 +65,7 @@ img_align_est_illumination_offset: true
 depth_filter_affine_est_offset: true
 depth_filter_affine_est_gain: false
 reprojector_affine_est_offset: true
-reprojector_affine_est_gain: false
+reprojector_affine_est_gain: true
 
 ########################################
 ###### Tuning for each module ##########

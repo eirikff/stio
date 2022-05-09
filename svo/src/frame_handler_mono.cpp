@@ -141,7 +141,9 @@ namespace svo
 
     // STEP 2: Map Reprojection & Feature Align
     VLOG(40) << "===== Project Map to Current Frame =====";
+    std::cout << "Before projectMapInFrame" << std::endl;
     n_total_observations = projectMapInFrame();
+    std::cout << "After projectMapInFrame" << std::endl;
     if (n_total_observations < options_.quality_min_fts)
     {
       LOG(WARNING) << "Not enough feature after reprojection: "

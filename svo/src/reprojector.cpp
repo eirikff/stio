@@ -41,6 +41,7 @@ namespace svo
     // Initialize grid
     if (!grid_)
     {
+      std::cout << "initialize grid" << std::endl;
       grid_.reset(
           new OccupandyGrid2D(
               options_.cell_size,
@@ -134,8 +135,10 @@ namespace svo
     // Reproject all map points of the closest N kfs with overlap. We only store
     // in which grid cell the points fall.
     candidates_.clear();
+    int total_points = 0;
     for (const FramePtr &ref_frame : visible_kfs)
     {
+      total_points += ref_frame->numFeatures();
       // Try to reproject each map point that the other KF observes
       for (size_t i = 0; i < ref_frame->num_features_; ++i)
       {
@@ -172,6 +175,7 @@ namespace svo
           candidates_.push_back(candidate);
       }
     }
+    std::cout << "reprojecting " << candidates_.size() << " candidates of " << total_points << " total features" << std::endl;
 
     Statistics lm_stats;
     VLOG(10) << "Landmark candidates num: " << candidates_.size() << std::endl;
@@ -191,6 +195,7 @@ namespace svo
     // to avoid extracting too many new landmarks from the rest candidates
     if (doesFrameHaveEnoughFeatures(cur_frame))
     {
+      std::cout << "frame have enough features after first reproj" << std::endl;
       reprojector_utils::setGridCellsOccupied(candidates_, *grid_);
       // We don't return here because we want to
       // check and set all the other grid cells occupied from seeds
@@ -239,6 +244,7 @@ namespace svo
     if (doesFrameHaveEnoughFeatures(cur_frame) ||
         !options_.reproject_unconverged_seeds)
     {
+      std::cout << "frame have enough features after second reproj" << std::endl;
       reprojector_utils::setGridCellsOccupied(candidates_, *grid_);
       candidates_.clear();
       return;
@@ -295,6 +301,7 @@ namespace svo
 
     if (doesFrameHaveEnoughFeatures(cur_frame))
     {
+      std::cout << "frame have enough features after thrid reproj" << std::endl;
       reprojector_utils::setGridCellsOccupied(candidates_, *grid_);
     }
     const double un_sd_ratio = (1.0 * un_sd_stats.n_matches) / stats_.n_matches;
@@ -303,6 +310,8 @@ namespace svo
       LOG(WARNING) << "More than 20% matches are unconverged seeds: "
                    << un_sd_ratio * 100 << "%";
     }
+
+    std::cout << "frame never had enough features after reproj" << std::endl;
   }
 
   namespace reprojector_utils
@@ -396,7 +405,10 @@ namespace svo
               matcher.findMatchDirect(*c.ref_frame, *frame, ref_ftr, ref_depth,
                                       c.cur_px);
           if (res != Matcher::MatchResult::kSuccess)
+          {
+            std::cout << "failed matching seed with result " << matcher.match_result_strings.at(res) << std::endl;
             return false;
+          }
         }
         else if (isUnconvergedCornerEdgeletSeed(c.type) ||
                  isUnconvergedMapPointSeed(c.type))
@@ -434,6 +446,7 @@ namespace svo
             *ref_frame, *frame, ref_ftr, ref_depth, c.cur_px);
         if (res != Matcher::MatchResult::kSuccess)
         {
+          // std::cout << "failed matching point with result " << matcher.match_result_strings.at(res) << std::endl;
           point->n_failed_reproj_++;
           return false; // TODO(cfo): We should return match result and write in statistics.
         }

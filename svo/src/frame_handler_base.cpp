@@ -694,6 +694,7 @@ namespace svo
           new_frames_->at(camera_idx),
           cur_reprojector->options_.max_n_kfs,
           &overlap_kfs_.at(camera_idx));
+      std::cout << " idx " << camera_idx << " overlap kfs: " << overlap_kfs_.at(camera_idx).size() << std::endl;
 #ifdef SVO_GLOBAL_MAP
       if (!isInRecovery() &&
           cur_reprojector->options_.use_kfs_from_global_map && global_map_)
@@ -734,6 +735,7 @@ namespace svo
     }
 
     // Effectively clear the points that were discarded by the reprojectors
+    std::cout << "number of trash points: " << trash_points.size() << std::endl;
     for (auto point_vec : trash_points)
       for (auto point : point_vec)
         map_->safeDeletePoint(point);
@@ -760,6 +762,9 @@ namespace svo
     VLOG(40) << "Reprojection:"
              << "\t nPoints = " << cumul_stats_.n_trials << "\t\t nMatches = "
              << cumul_stats_.n_matches;
+    std::cout << "Reprojection:"
+              << "\t nPoints = " << cumul_stats_.n_trials << "\t\t nMatches = "
+              << cumul_stats_.n_matches << std::endl;
 
     size_t n_total_ftrs = cumul_stats_.n_matches +
                           (cumul_stats_global_map.n_matches <= 10 ? 0 : cumul_stats_global_map.n_matches);
