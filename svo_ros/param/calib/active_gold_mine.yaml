@@ -24,7 +24,6 @@ cameras:
             0.0, 0.0, 0.0, 1.0]
 label: active_gold_mine
 
-# NOT UPDATED FOR ACTIVE GOLD MINE DATASET
 imu_params:
   delay_imu_cam: -0.02414188675155223  # from rovtio launch file: https://github.com/ntnu-arl/rovtio/blob/main/launch/rovtio.launch
   max_imu_delta_t: 0.01
@@ -36,7 +35,10 @@ imu_params:
   sigma_omega_bias_c: 0.03
   sigma_acc_bias_c: 0.1
   sigma_integration: 0.0
-  g: 9.79659  # gravity magnitude at Uni of Nevada at 5000ft (https://www.sensorsone.com/local-gravity-calculator/)
+  #g: 9.79659  # gravity magnitude at Uni of Nevada at 5000ft (https://www.sensorsone.com/local-gravity-calculator/)
+  #g: 10.0854 # from rovio_bsp charlie_tau2.info file: https://github.com/ntnu-arl/rovio_bsp/blob/cerberus_rotio_dev/cfg/charlie_tau2/charlie_tau2.info#L182=
+  #g: 10.07652 # calculated in excel as average of all imu meas in dataset
+  g: 10.0800933352604 # calculated in excel from the first 40 seconds of no motion
   imu_rate: 200
 
 imu_initialization:

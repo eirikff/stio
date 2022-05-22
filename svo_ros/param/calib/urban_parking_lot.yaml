@@ -22,9 +22,8 @@ cameras:
            -0.999990442119, -0.0033974103619, 0.00275195807899, 0.0231335126268,
             0.00235436470251, -0.948811710014, -0.315833493961, -0.0421824381085,
             0.0, 0.0, 0.0, 1.0]
-label: active_gold_mine
+label: urban_parking_lot
 
-# NOT UPDATED FOR URBAN PARKING LOT DATASET
 imu_params:
   delay_imu_cam: -0.02414188675155223  # from rovtio launch file: https://github.com/ntnu-arl/rovtio/blob/main/launch/rovtio.launch
   max_imu_delta_t: 0.01
@@ -36,7 +35,8 @@ imu_params:
   sigma_omega_bias_c: 0.03
   sigma_acc_bias_c: 0.1
   sigma_integration: 0.0
-  g: 9.79659  # gravity magnitude at Uni of Nevada at 5000ft (https://www.sensorsone.com/local-gravity-calculator/)
+  # g: 9.79659  # gravity magnitude at Uni of Nevada at 5000ft (https://www.sensorsone.com/local-gravity-calculator/)
+  g: 10.1637129194994 # calculated in excel from 45 sec of data with no motion
   imu_rate: 200
 
 imu_initialization:

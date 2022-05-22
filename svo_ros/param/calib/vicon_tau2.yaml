@@ -25,7 +25,7 @@ cameras:
 label: vicon_tau2
 
 imu_params:
-  delay_imu_cam: -0.02414188675155223  # from rovtio launch file: https://github.com/ntnu-arl/rovtio/blob/main/launch/rovtio.launch
+  delay_imu_cam: 0.0 #-0.02414188675155223  # from rovtio launch file: https://github.com/ntnu-arl/rovtio/blob/main/launch/rovtio.launch
   max_imu_delta_t: 0.01
   # vn100 datasheet: https://www.vectornav.com/docs/default-source/datasheets/vn-100-datasheet-rev2.pdf?sfvrsn=8e35fd12_10
   acc_max: 156.96  # from datasheet: 16g = 16 * 9.81 = 156.96 m/s^2
@@ -35,7 +35,8 @@ imu_params:
   sigma_omega_bias_c: 0.03
   sigma_acc_bias_c: 0.1
   sigma_integration: 0.0
-  g: 9.79659  # gravity magnitude at Uni of Nevada at 5000ft (https://www.sensorsone.com/local-gravity-calculator/)
+  # g: 9.79659  # gravity magnitude at Uni of Nevada at 5000ft (https://www.sensorsone.com/local-gravity-calculator/)
+  g: 9.5760 # calcuated in excel as average of all imu meas in dataset
   imu_rate: 200
 
 imu_initialization:
