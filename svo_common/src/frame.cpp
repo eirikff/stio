@@ -490,6 +490,9 @@ namespace svo
 
     void equalizeHistogram(const cv::Mat &in, cv::Mat &out)
     {
+#ifdef STIO_USE_OPENCV_NORMALIZE
+      cv::normalize(in, out, 0, 255, cv::NORM_MINMAX, CV_8U);
+#else
       constexpr int intensityMin = 0;
       constexpr int intensityMax = (1 << 16) - 1;
       constexpr int histSize = intensityMax - intensityMin + 1;
@@ -519,6 +522,7 @@ namespace svo
       double alpha = 255.0 / (max_val - min_val);
       double beta = -1.0 * min_val * alpha;
       in.convertTo(out, CV_8UC1, alpha, beta);
+#endif
     }
 
   } // namespace frame_utils
