@@ -180,7 +180,7 @@ namespace svo
     // select keyframe
     VLOG(40) << "===== Keyframe Selection =====";
     frame_utils::getSceneDepth(newFrame(), depth_median_, depth_min_, depth_max_);
-    VLOG(40) << "Current Frame Depth: "
+    VLOG(20) << "Current Frame Depth: "
              << "min: " << depth_min_
              << ", max: " << depth_max_ << ", median: " << depth_median_;
     initializer_->setDepthPrior(depth_median_);

@@ -18,7 +18,7 @@ max_fts: 180
 max_map_fts: 300
 # max_fts: 220
 max_n_kfs: 20
-quality_min_fts: 5
+quality_min_fts: 10
 
 # Map scale when initialized (not used for stereo)
 # Increase if the initial scene depth is larger
@@ -35,7 +35,7 @@ kfselect_criterion: FORWARD    # alterntive: DOWNLOOKING
 # The following kfselect_* ONLY affects FORWARD
 # If the number of features: >upper, no keyframe; <lower, take keyframe
 kfselect_numkfs_upper_thresh: 120
-kfselect_numkfs_lower_thresh: 5
+kfselect_numkfs_lower_thresh: 20
 # If the current frame is within the following range of any visible keyframes,
 # do not take a new keyframe.
 # You can lower these values for more keyframes
@@ -66,7 +66,7 @@ reprojector_affine_est_gain: true
 ########################################
 # Initialization
 # For a higher resolution, increase the value accordingly.
-init_min_disparity: 15
+init_min_disparity: 20
 #init_min_features: 40
 #init_min_disparity: 30
 #init_min_inliers: 40
@@ -74,8 +74,8 @@ init_min_disparity: 15
 # Feature Detection
 grid_size: 15 # Larger for larger images, for every cell you have max one feature.
 n_pyr_levels: 4 # Increase for larger images (image align max minus one)
-detector_threshold_primary: 16 # Fast detector threshold
-detector_threshold_secondary: 150 # Edgelet detector threshold
+detector_threshold_primary: 23 # Fast detector threshold
+detector_threshold_secondary: 180 # Edgelet detector threshold
 detector_threshold_shitomasi: 50 # Map Point detector threshold
 
 # Image Alignment
