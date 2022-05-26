@@ -192,6 +192,14 @@ namespace svo
       imu_handler_->setAccelerometerBias(speed_and_bias.tail<3>());
       imu_handler_->setGyroscopeBias(speed_and_bias.segment<3>(3));
 
+      double timestamp = new_frames->getMinTimestampSeconds();
+      auto p = std::cout.precision();
+      std::cout.precision(17);
+      std::cout << "Biases: t = " << timestamp << "\n"
+                << "  acc = " << speed_and_bias.tail<3>().transpose() << "\n"
+                << "  gyr = " << speed_and_bias.segment<3>(3).transpose() << std::endl;
+      std::cout.precision(p);
+
       publisher_->addFrame(last_added_nframe_imu_);
     }
 
