@@ -21,7 +21,7 @@ quality_min_fts: 10
 
 # Map scale when initialized (not used for stereo)
 # Increase if the initial scene depth is larger
-map_scale: 5.0
+map_scale: 1.0
 
 # Initial rotation
 T_world_imuinit/qx: 0
@@ -65,7 +65,7 @@ reprojector_affine_est_gain: true
 ########################################
 # Initialization
 # For a higher resolution, increase the value accordingly.
-init_min_disparity: 25
+init_min_disparity: 30
 # init_min_features: 50
 
 # Feature Detection

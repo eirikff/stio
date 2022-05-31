@@ -15,7 +15,7 @@
     <param name="calib_file" value="$(arg calib_file)" />
 
     <!--Parameters-->
-    <rosparam file="$(find svo_ros)/param/vio_mono_vicon_tau2_fast8histeq.yaml" />
+    <rosparam file="$(find svo_ros)/param/vio_mono_vicon_tau2_fast16.yaml" />
     <param name="runlc" value="false" />
     
   </node>

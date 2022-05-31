@@ -12,7 +12,7 @@
     <param name="calib_file" value="$(arg calib_file)" />
 
     <!--Parameters-->
-    <rosparam file="$(find svo_ros)/param/frontend_urban_parking_lot.yaml" />
+    <rosparam file="$(find svo_ros)/param/frontend_urban_parking_lot_fast8histeq.yaml" />
     <!--<param name="map_scale" value="1" />-->
     
     <!-- Loop closure detection parameters -->

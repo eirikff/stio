@@ -7,7 +7,7 @@ SET(USE_LOOP_CLOSING FALSE)
 SET(USE_GLOBAL_MAP FALSE)
 
 SET(USE_16BIT_IMAGE TRUE)
-SET(USE_16BIT_DETECTION FALSE)  # if true use fast16, else use histogram equalization + fast
+SET(USE_16BIT_DETECTION TRUE)  # if true use fast16, else use histogram equalization + fast
 SET(USE_OPENCV_NORMALIZE FALSE) # if true, use cv::normalize to equalize image, else use histogram equalization
 
 # Set definitions

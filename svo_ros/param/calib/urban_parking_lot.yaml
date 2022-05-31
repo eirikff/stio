@@ -32,8 +32,10 @@ imu_params:
   omega_max: 34.9066  # from datasheet: 2000 deg/s = 2000 * pi/180 = 34.9066
   sigma_omega_c: 12.0e-4
   sigma_acc_c: 8.0e-3
-  sigma_omega_bias_c: 0.03
-  sigma_acc_bias_c: 0.1
+  # sigma_omega_bias_c: 0.03
+  # sigma_acc_bias_c: 0.1
+  sigma_omega_bias_c: 6.164414002968977e-05
+  sigma_acc_bias_c: 1.0e-4
   sigma_integration: 0.0
   # g: 9.79659  # gravity magnitude at Uni of Nevada at 5000ft (https://www.sensorsone.com/local-gravity-calculator/)
   g: 10.1637129194994 # calculated in excel from 45 sec of data with no motion
