@@ -20,6 +20,20 @@ namespace svo
     {
       pub_ext_pos_ = std::make_unique<ros::Publisher>();
       *pub_ext_pos_ = nh.advertise<geometry_msgs::PoseStamped>("external_pose", 10);
+
+      // gtsam::Rot3 rot_IV(0.33638, -0.01749, 0.94156,
+      //                    -0.02078, -0.99972, -0.01114,
+      //                    0.94150, -0.01582, -0.33665);
+      // gtsam::Point3 trans_IV(0.06901, -0.02781, -0.12395);
+      // T_imu_vicon_ = gtsam::Pose3(rot_IV, trans_IV);
+      gtsam::Matrix44 mat;
+      mat << 0.33638023, -0.01748697, 0.94156389, 0.06901,
+          -0.02078177, -0.99972194, -0.01114267, -0.02781,
+          0.94149693, -0.01581919, -0.3366501, -0.12395,
+          0., 0., 0., 1.;
+      T_imu_vicon_ = gtsam::Pose3(mat);
+      std::cout << "ExtPoseHandler: \n"
+                << T_imu_vicon_ << std::endl;
     }
 
     /**
@@ -65,8 +79,11 @@ namespace svo
 
     inline void addPose(const boost::shared_ptr<const MsgType> &msg)
     {
-      gtsam::Pose3 p = getPose(msg);
+      gtsam::Pose3 p = getPose(msg); // p = T_world_mocap
       double ts = msg->header.stamp.toSec();
+
+      // want T_world_imu
+      // p = p * T_imu_vicon_.inverse();
 
       messages_.insert({ts, p});
 
@@ -127,6 +144,8 @@ namespace svo
     std::map<double, gtsam::Pose3> messages_; // key is timestamp in seconds
 
     std::unique_ptr<ros::Publisher> pub_ext_pos_;
+
+    gtsam::Pose3 T_imu_vicon_;
   };
 
 } // namespace svo

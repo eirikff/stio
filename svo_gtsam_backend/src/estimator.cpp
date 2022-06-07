@@ -266,11 +266,11 @@ namespace svo
       std::cout << "Error after: " << res.errorAfter << "\n";
       std::cout << std::endl;
 
-      res = isam_->update(); // might get better results by updating one extra time
-      res.print("GTSAM BACKEND SECOND ISAM RESULTS: ");
-      std::cout << "Error before: " << res.errorBefore << "\n";
-      std::cout << "Error after: " << res.errorAfter << "\n";
-      std::cout << std::endl;
+      // res = isam_->update(); // might get better results by updating one extra time
+      // res.print("GTSAM BACKEND SECOND ISAM RESULTS: ");
+      // std::cout << "Error before: " << res.errorBefore << "\n";
+      // std::cout << "Error after: " << res.errorAfter << "\n";
+      // std::cout << std::endl;
 
       graph_.resize(0);
       initial_values_.clear();

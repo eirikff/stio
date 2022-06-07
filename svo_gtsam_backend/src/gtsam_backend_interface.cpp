@@ -307,7 +307,7 @@ namespace svo
     imu_handler_ = imu_handler;
 
     const ImuCalibration &calib = imu_handler_->imu_calib_;
-    // TODO: which direction should gravity_magnitude be? + or - coeff?
+    // this gives the same direction as MakeSharedU.
     auto p = std::make_shared<gtsam_backend::ImuParameters>(gtsam::Vector3(0, 0, -calib.gravity_magnitude));
     p->int_param = gtsam::PreintegrationCombinedParams::MakeSharedU(calib.gravity_magnitude);
     p->int_param->accelerometerCovariance = gtsam::I_3x3 * calib.acc_noise_density * calib.acc_noise_density;
@@ -323,12 +323,11 @@ namespace svo
 
     // TODO: this needs to be a parameter or estimated from data
     // FOR EUROC VICON ROOM (T_imu_vicon = T_sensor_body)
-    gtsam::Matrix44 mat;
-    mat << 0.33638023, -0.01748697, 0.94156389, 0.06901,
-        -0.02078177, -0.99972194, -0.01114267, -0.02781,
-        0.94149693, -0.01581919, -0.3366501, -0.12395,
-        0.0, 0.0, 0.0, 1.0;
-    gtsam::Pose3 T_imu_vicon(mat);
+    gtsam::Rot3 rot_IV(0.33638, -0.01749, 0.94156,
+                       -0.02078, -0.99972, -0.01114,
+                       0.94150, -0.01582, -0.33665);
+    gtsam::Point3 trans_IV(0.06901, -0.02781, -0.12395);
+    gtsam::Pose3 T_imu_vicon(rot_IV, trans_IV);
     p->int_param->body_P_sensor = T_imu_vicon.inverse();
 
     backend_.addImuParams(p);
@@ -397,6 +396,10 @@ namespace svo
 
         gtsam_backend::SpeedAndBias speed_and_bias;
         backend_.getSpeedAndBias(last_optimized_bid_, speed_and_bias);
+
+        // std::cout << "Bias:\n"
+        //           << "  acc = " << speed_and_bias.tail<3>().transpose() << "\n"
+        //           << "  gyr = " << speed_and_bias.segment<3>(3).transpose() << std::endl;
 
         // Save state for visualization
         last_state_.set_T_W_B(T_WS);
